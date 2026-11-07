@@ -1,0 +1,36 @@
+{% extends "base.html" %}{% from "_macros.html" import icone, situacao, csrf_campo, data, confirmar with context %}
+{% block titulo %}{{ d.codigo }}{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><div class="titulo"><div class="migalhas"><a href="{{ url_for('documentos', uid=uid) }}">Documentos</a> ›</div>
+<h1>{{ d.codigo }} — {{ d.titulo }}</h1><p>{{ situacao(d.situacao, d.situacao_rotulo) }} · <b>Em uso na análise:</b> {{ d.versao_em_uso }}</p></div>
+{% if d.versao_atual %}<a class="btn" href="{{ url_for('editor', uid=uid, did=d.id) }}">{{ icone('editor') }}Abrir no editor</a>{% endif %}
+<a class="btn {{ 'sec' if d.versao_atual else '' }}" href="{{ url_for('anonimizacao', uid=uid, did=d.id) }}">{{ icone('anonimizacao') }}{{ 'Refazer anonimização' if d.versao_atual else 'Anonimizar' }}</a></div>
+<div class="grade g-lado">
+<div>
+<div class="cartao"><h2>Versões deste documento</h2>
+<p class="suave">Nenhuma versão sobrescreve outra. As versões 1–3 ficam no cofre (cifradas); a versão anonimizada é a única usada na análise, na IA e nas exportações.</p>
+<table class="tabela"><thead><tr><th>Versão</th><th>Onde</th><th>Detalhes</th><th></th></tr></thead><tbody>
+<tr><td><b>1. Original</b></td><td>{{ icone('cofre') }} cofre</td><td>{% if original %}{{ (original.tamanho/1024)|round(1) }} KB · SHA-256 <span class="mono">{{ original.sha256[:16] }}…</span>{% if nome_original %}<br><small>Arquivo: {{ nome_original }}</small>{% endif %}{% else %}texto colado (sem arquivo){% endif %}</td>
+<td>{% if original %}<a class="btn sec pq" href="{{ url_for('documento_original', uid=uid, did=d.id) }}">{{ icone('baixar') }}Baixar</a>{% endif %}</td></tr>
+{% for t in protegidas %}<tr><td>{{ '2. Texto extraído' if t.tipo == 'extraido' else '3. Revisada nº ' ~ t.numero }}</td><td>{{ icone('cofre') }} cofre</td><td><small>{{ data(t.criado_em) }} · {{ t.observacao }}</small></td>
+<td><a class="btn sec pq" href="{{ url_for('documento_protegido', uid=uid, did=d.id, tipo=t.tipo, n=t.numero) }}">Ver</a></td></tr>{% endfor %}
+{% for v in versoes %}<tr><td><b>4. Anonimizada nº {{ v.numero }}</b>{% if loop.first %} <span class="etiqueta ok">em uso</span>{% endif %}</td><td>trabalho</td><td><small>{{ v.origem_rotulo }} · {{ data(v.criado_em) }} · {{ v.observacao }}</small></td>
+<td><a class="btn sec pq" href="{{ url_for('editor_versoes', uid=uid, did=d.id) }}">Versões</a></td></tr>{% endfor %}
+</tbody></table>
+<div class="linha" style="margin-top:10px"><a class="btn sec" href="{{ url_for('documento_protegido', uid=uid, did=d.id) }}">{{ icone('editor') }}Revisar texto antes da anonimização</a></div></div>
+<div class="cartao"><h2>Sessões de anonimização</h2>{% for s in sessoes %}<div>Sessão {{ s.id }} · {{ situacao(s.situacao) }} · {{ data(s.criado_em) }}{% if s.aplicada_em %} · aplicada {{ data(s.aplicada_em) }}{% endif %}</div>{% else %}<p class="suave">Nenhuma.</p>{% endfor %}</div>
+<div class="cartao"><h2>Histórico</h2><table class="tabela"><tbody>{% for h in hist %}<tr><td class="suave">{{ data(h.momento) }}</td><td>{{ h.operacao|replace('_',' ') }}</td><td class="suave">{{ h.justificativa }}</td></tr>{% endfor %}</tbody></table></div>
+</div>
+<div>
+<form method="post" class="cartao">{{ csrf_campo() }}<h2>Metadados</h2>
+<label>Título</label><input type="text" name="titulo" value="{{ d.titulo }}" required>
+<label>Tipo</label><select name="tipo">{% for k, v in tipos.items() %}<option value="{{ k }}" {{ 'selected' if k == d.tipo }}>{{ v }}</option>{% endfor %}</select>
+<label>Participante</label><select name="participante_id"><option value="">—</option>{% for p in participantes %}<option value="{{ p.id }}" {{ 'selected' if p.id == d.participante_id }}>{{ p.codigo }}</option>{% endfor %}</select>
+<label>Data da coleta</label><input type="date" name="data_coleta" value="{{ d.data_coleta }}">
+<label>Observações</label><textarea name="observacoes" rows="2">{{ d.observacoes }}</textarea>
+<label>Motivo da alteração</label><input type="text" name="justificativa"><button class="btn" style="margin-top:8px">Salvar</button></form>
+<div class="cartao"><h2>Arquivar</h2><p class="suave">Arquivar retira o documento das listas, sem apagar nada.</p>
+{% if d.ativo %}{{ confirmar(url_for('documento_ativo', uid=uid, did=d.id), 'Arquivar documento', 'Arquivar este documento?', {'acao':'arquivar'}) }}
+{% else %}<form method="post" action="{{ url_for('documento_ativo', uid=uid, did=d.id) }}">{{ csrf_campo() }}<input type="hidden" name="acao" value="reativar"><button class="btn sec">Reativar</button></form>{% endif %}</div>
+</div></div>
+{% endblock %}

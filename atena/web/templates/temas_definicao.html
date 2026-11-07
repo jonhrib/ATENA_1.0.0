@@ -1,0 +1,13 @@
+{% extends "base.html" %}{% from "_macros.html" import icone, situacao, data with context %}
+{% block titulo %}Definição dos temas{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><div class="titulo"><div class="migalhas">Fase 5 — {{ fase.nome }} · {{ situacao(fase.situacao, fase.situacao_rotulo) }}</div><h1>Definição e nomeação dos temas</h1>
+<p>Para cada tema: nome, conceito central, escopo, limites, relação com a pergunta de pesquisa e evidências representativas. Você confirma cada definição.</p></div></div>
+<nav class="abas"><a href="{{ url_for('mapa', uid=uid) }}">3 · Mapa e agrupamento</a><a href="{{ url_for('revisao', uid=uid) }}">4 · Revisão</a><a href="{{ url_for('definicao', uid=uid) }}" class="ativa">5 · Definição e nomeação</a></nav>
+<div class="grade g2">{% for t in temas %}<div class="cartao {{ 'destaque' if t.definicao_desatualizada }}"><div class="linha"><h3 class="flex1" style="margin:0">{{ '↳ ' if t.pai_id }}{{ t.nome }}</h3>{{ situacao(t.situacao, t.situacao_rotulo) }}</div>
+<p class="suave" style="margin:6px 0">{{ t.conceito_central or 'Conceito central ainda não definido.' }}</p>
+<div class="suave" style="font-size:.82rem">{{ t.n_codigos }} códigos · {{ t.n_fragmentos }} fragmentos{% if t.definicao_confirmada_em %} · confirmada em {{ data(t.definicao_confirmada_em) }}{% endif %}
+{% if t.definicao_desatualizada %} · <span class="etiqueta alerta">alterado após a confirmação</span>{% endif %}</div>
+<a class="btn pq" href="{{ url_for('tema_definir', uid=uid, tid=t.id) }}" style="margin-top:8px">{{ 'Revisar definição' if t.definicao_confirmada_em else 'Definir' }}</a></div>
+{% else %}<div class="cartao"><p class="suave">Nenhum tema.</p></div>{% endfor %}</div>
+{% endblock %}

@@ -1,0 +1,4 @@
+-r requirements.txt
+pytest>=8
+playwright>=1.40       # teste de ponta a ponta no navegador (opcional: python -m playwright install chromium)
+pyinstaller>=6.3       # geração do executável para Windows

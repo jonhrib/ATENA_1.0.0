@@ -1,0 +1,61 @@
+{% extends "base.html" %}{% from "_macros.html" import icone, situacao, csrf_campo, confirmar with context %}
+{% block titulo %}Revisão da anonimização · {{ d.codigo }}{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><div class="titulo"><div class="migalhas"><a href="{{ url_for('anonimizacao_lista', uid=uid) }}">Anonimização</a> › <a href="{{ url_for('documento', uid=uid, did=d.id) }}">{{ d.codigo }}</a></div>
+<h1>Revisão da anonimização</h1><p>{{ d.titulo }} · texto revisado nº {{ t.numero }} · {{ resumo.total }} itens:
+<span class="etiqueta alerta">{{ resumo.pendentes }} pendentes</span> <span class="etiqueta erro">{{ resumo.anonimizar }} anonimizar</span>
+<span class="etiqueta info">{{ resumo.manter }} manter</span> <span class="etiqueta">{{ resumo.rejeitar }} não é dado pessoal</span></p></div>
+<form method="post" action="{{ url_for('anonimizacao_acao', uid=uid, sid=s.id, acao='lote') }}" class="inline">{{ csrf_campo() }}<button class="btn sec" title="Aprova os itens de confiança alta que já têm código (mapeamento) ou são padrões fixos (e-mail, telefone…)">Aprovar itens de confiança alta</button></form>
+<a class="btn sec" href="{{ url_for('anonimizacao_previa', uid=uid, sid=s.id) }}">Prévia do resultado</a>
+<button class="btn" type="button" data-abrir="dlg-aplicar" {{ 'disabled' if resumo.pendentes }}>{{ icone('ok') }}Aplicar anonimização</button></div>
+<div class="aviso info">{{ icone('info') }}<div>{{ aviso }} Selecione qualquer trecho do texto com o mouse para <b>adicionar um dado não detectado</b>.
+Cores: <span class="etiqueta alerta">pendente</span> <span class="etiqueta erro">anonimizar</span> <span class="etiqueta info">manter</span> <span class="etiqueta">não é dado pessoal</span>.</div></div>
+<div class="grade g2">
+<div><div class="transcricao" id="texto-anon" data-preservar-rolagem data-sessao="{{ s.id }}" data-url-manual="{{ url_for('api_anon_manual', uid=uid, sid=s.id) }}">
+{%- for sg in segs -%}{%- if sg.ids -%}{%- set it = mapa_itens[sg.ids[0]] -%}<span class="seg anon-{{ it.d }}" data-i="{{ sg.i }}" data-f="{{ sg.f }}" data-item="{{ sg.ids[0] }}" title="{{ it.c }}{{ ' → ' ~ it.cod if it.cod and it.d == 'anonimizar' else '' }}">{{ sg.t }}</span>{%- else -%}<span class="seg" data-i="{{ sg.i }}" data-f="{{ sg.f }}">{{ sg.t }}</span>{%- endif -%}{%- endfor -%}
+</div></div>
+<div class="painel-lateral" id="lista-anon">
+<div class="linha" style="margin-bottom:8px"><input type="search" placeholder="Filtrar itens…" data-filtrar="#grupos-anon" class="flex1">
+<select id="filtro-decisao" style="max-width:170px"><option value="">todas as decisões</option><option value="pendente">pendentes</option><option value="anonimizar">anonimizar</option><option value="manter">manter</option><option value="rejeitar">não é dado pessoal</option></select></div>
+<div id="grupos-anon">
+{% for g in grupos %}
+<div class="cartao compacto grupo-anon" data-texto="{{ g.trecho }} {{ g.categoria }}" data-decisao="{{ g.decisao }}" data-itens="{{ g.itens|map(attribute='id')|join(',') }}" data-termo="{{ g.trecho }}">
+<div class="linha"><b class="flex1">{{ g.trecho }}</b><span class="etiqueta {{ {'alta':'erro','media':'alerta','baixa':''}[g.confianca] }}">confiança {{ g.confianca }}</span>{{ situacao(g.decisao if g.decisao != 'mista' else 'pendente', g.decisao) }}</div>
+<div class="suave" style="font-size:.8rem">{{ categorias.get(g.categoria, g.categoria) }} · {{ g.n }} ocorrência(s) · fonte: {{ g.fontes|join(', ') }}{% if g.itens[0].observacao %} · {{ g.itens[0].observacao }}{% endif %}</div>
+<div class="citacao-bloco" style="font-size:.88rem">{{ g.itens[0].contexto.antes }}<b style="background:#fcd9d5">{{ g.itens[0].contexto.trecho }}</b>{{ g.itens[0].contexto.depois }}</div>
+<div class="linha" style="margin-top:6px">
+<select class="sel-cat" style="max-width:190px">{% for k, v in categorias.items() %}<option value="{{ k }}" {{ 'selected' if k == g.categoria }}>{{ v }}</option>{% endfor %}</select>
+<select class="sel-cod" style="max-width:200px"><option value="">novo código automático</option>
+{% for i in identidades %}<option value="{{ i.codigo }}" {{ 'selected' if i.codigo == g.codigo }}>{{ i.codigo }}</option>{% endfor %}<option value="__digitar">digitar código…</option></select></div>
+<div class="linha" style="margin-top:6px">
+<button class="btn pq acao-anon" data-decisao="anonimizar" type="button">Anonimizar</button>
+<button class="btn sec pq acao-anon" data-decisao="manter" type="button" title="É dado pessoal, mas deve permanecer (decisão registrada)">Manter</button>
+<button class="btn sec pq acao-anon" data-decisao="rejeitar" type="button">Não é dado pessoal</button>
+<label class="opcao" style="margin:0;font-size:.8rem"><input type="checkbox" class="chk-excecao"> e não sinalizar mais</label></div>
+{% if g.n > 1 %}<details class="dobra"><summary>Decidir ocorrência por ocorrência ({{ g.n }})</summary>
+{% for it in g.itens %}<div class="linha" style="border-top:1px solid var(--borda);padding:6px 0" id="item-{{ it.id }}" data-item="{{ it.id }}">
+<div class="flex1" style="font-size:.84rem"><a href="#" class="ir-item" data-i="{{ it.inicio }}" data-f="{{ it.fim }}">…{{ it.contexto.antes[-50:] }}<b>{{ it.trecho }}</b>{{ it.contexto.depois[:50] }}…</a> {{ situacao(it.decisao, it.decisao_rotulo) }}</div>
+<button class="btn pq acao-item" data-decisao="anonimizar" type="button">A</button><button class="btn sec pq acao-item" data-decisao="manter" type="button">M</button><button class="btn sec pq acao-item" data-decisao="rejeitar" type="button">N</button></div>{% endfor %}
+</details>{% else %}<div id="item-{{ g.itens[0].id }}"><a href="#" class="ir-item suave" style="font-size:.8rem" data-i="{{ g.itens[0].inicio }}" data-f="{{ g.itens[0].fim }}">localizar no texto</a>
+· <a href="#" class="ajustar-item suave" style="font-size:.8rem" data-item="{{ g.itens[0].id }}" data-url="{{ url_for('api_anon_ajustar', uid=uid, iid=g.itens[0].id) }}">corrigir trecho (selecione no texto antes)</a></div>{% endif %}
+</div>
+{% else %}<div class="vazio">Nenhum possível dado pessoal detectado. Leia o texto com atenção e selecione manualmente o que precisar ser anonimizado.</div>{% endfor %}
+</div>
+<p class="suave" style="font-size:.82rem">Termos protegidos ativos: {{ protegidos|length }} (ex.: {{ protegidos[:4]|map(attribute='termo')|join(', ') }}…). <a href="{{ url_for('projeto_editar', uid=uid) }}#privacidade">gerenciar</a></p>
+</div></div>
+
+<dialog id="dlg-manual"><form method="dialog"><div class="cab"><h3>Adicionar dado pessoal</h3></div><div class="corpo">
+<p>Trecho selecionado: <b id="manual-trecho"></b></p><label>Categoria</label><select id="manual-cat">{% for k, v in categorias.items() %}<option value="{{ k }}" {{ 'selected' if k == 'PESSOA' }}>{{ v }}</option>{% endfor %}</select>
+<label class="opcao"><input type="checkbox" id="manual-todas" checked> Marcar também todas as outras ocorrências deste texto no documento</label>
+<p class="ajuda">O item entra como pendente; depois escolha o código e aprove.</p></div>
+<div class="pe"><button class="btn sec" value="cancelar">Cancelar</button><button class="btn" value="ok">Adicionar</button></div></form></dialog>
+
+<dialog id="dlg-aplicar"><form method="post" action="{{ url_for('anonimizacao_acao', uid=uid, sid=s.id, acao='aplicar') }}">{{ csrf_campo() }}
+<div class="cab"><h3>Aplicar anonimização</h3></div><div class="corpo">
+<p>Serão feitas <b>{{ resumo.anonimizar }}</b> substituições. O texto revisado continua guardado no cofre; uma nova versão anonimizada será criada para a análise.</p>
+<label class="opcao"><input type="checkbox" name="confirmo" value="1" required> Li o documento inteiro e conferi as substituições, inclusive possíveis dados não detectados automaticamente.</label>
+<label>Observação (registrada no histórico)</label><input type="text" name="justificativa" placeholder="Ex.: conferido com a ficha do participante">
+</div><div class="pe"><button type="button" class="btn sec" data-fechar>Voltar</button><button class="btn">Aplicar</button></div></form></dialog>
+<div class="linha" style="margin-top:14px">{{ confirmar(url_for('anonimizacao_acao', uid=uid, sid=s.id, acao='cancelar'), 'Cancelar esta revisão', 'Cancelar a revisão? Nenhuma substituição será aplicada; as decisões ficam registradas.') }}</div>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/anonimizacao.js') }}" data-url-decidir="{{ url_for('api_anon_decidir', uid=uid) }}" id="js-anon"></script>{% endblock %}

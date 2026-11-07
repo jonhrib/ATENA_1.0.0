@@ -1,0 +1,8 @@
+{% extends "base.html" %}{% from "_macros.html" import icone with context %}
+{% block titulo %}Prévia{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><div class="titulo"><div class="migalhas"><a href="{{ url_for('anonimizacao', uid=uid, did=d.id) }}">Revisão</a> ›</div><h1>Prévia da versão anonimizada</h1>
+<p>Como o texto ficará com as decisões atuais (itens pendentes ainda não foram substituídos). Nada foi gravado.</p></div>
+<a class="btn sec" href="{{ url_for('anonimizacao', uid=uid, did=d.id) }}">{{ icone('esq') }}Voltar à revisão</a></div>
+<div class="transcricao">{{ texto }}</div>
+{% endblock %}

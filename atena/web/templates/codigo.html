@@ -1,0 +1,29 @@
+{% extends "base.html" %}{% from "_macros.html" import icone, situacao, csrf_campo, data, confirmar, citacao with context %}
+{% block titulo %}{{ c.nome }}{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><div class="titulo"><div class="migalhas"><a href="{{ url_for('codigos', uid=uid) }}">Códigos</a> ›</div>
+<h1><span class="chip" style="font-size:1rem"><i style="background:{{ c.cor }}"></i>{{ c.nome }}</span> {{ situacao(c.situacao) }}</h1>
+<p>{{ c.descricao or 'Sem descrição.' }}</p><p class="suave">Origem: {{ 'sugestão de IA aprovada pelo pesquisador' if c.origem == 'ia' else 'manual' }} · criado em {{ data(c.criado_em) }} · {{ ev|length }} fragmento(s)
+{% for t in c.temas %} · tema <a href="{{ url_for('tema', uid=uid, tid=t.id) }}">{{ t.nome }}</a>{% endfor %}</p></div></div>
+<div class="grade g-lado">
+<div class="cartao"><h2>Evidências ({{ ev|length }})</h2>
+{% for (doc, part), fs in por_doc.items() %}<h3 style="margin-top:12px">{{ part or 'sem participante' }} · {{ doc }} <small class="suave">({{ fs|length }})</small></h3>
+{% for f in fs %}{{ citacao(f, uid) }}{% if f.outros_codigos %}<div class="suave" style="font-size:.8rem;margin:-4px 0 8px 14px">também: {{ f.outros_codigos|join(', ') }}</div>{% endif %}
+{% if f.codificacao_justificativa %}<div class="suave" style="font-size:.8rem;margin:-4px 0 8px 14px">justificativa: {{ f.codificacao_justificativa }}</div>{% endif %}{% endfor %}
+{% else %}<p class="suave">Nenhum fragmento associado.</p>{% endfor %}</div>
+<div>
+<form method="post" class="cartao">{{ csrf_campo() }}<input type="hidden" name="acao" value="editar"><h2>Editar</h2>
+<label>Nome</label><input type="text" name="nome" value="{{ c.nome }}"><label>Descrição</label><textarea name="descricao" rows="4">{{ c.descricao }}</textarea>
+<label>Justificativa</label><textarea name="justificativa" rows="3">{{ c.justificativa }}</textarea><label>Cor</label><input type="text" name="cor" value="{{ c.cor }}">
+<label>Motivo da alteração</label><input type="text" name="motivo"><button class="btn" style="margin-top:8px">Salvar</button></form>
+<div class="cartao"><h2>Mesclar, excluir ou restaurar</h2>
+{% if c.situacao == 'ativo' %}
+<form method="post" class="form-confirmar" data-confirmar="Mesclar este código no destino? Fragmentos e temas passam para o destino; este código fica como “mesclado”." data-justificativa="1">{{ csrf_campo() }}
+<input type="hidden" name="acao" value="mesclar"><input type="hidden" name="motivo"><label>Mesclar em</label><select name="destino" required>{% for o in todos if o.id != c.id %}<option value="{{ o.id }}">{{ o.nome }}</option>{% endfor %}</select>
+<button class="btn sec pq" style="margin-top:6px">Mesclar</button></form><hr>
+<form method="post" class="form-confirmar" data-confirmar="Excluir o código? Os fragmentos e o histórico são preservados e o código pode ser restaurado." data-justificativa="1">{{ csrf_campo() }}
+<input type="hidden" name="acao" value="excluir"><input type="hidden" name="motivo"><button class="btn perigo">Excluir código</button></form>
+{% else %}<form method="post">{{ csrf_campo() }}<input type="hidden" name="acao" value="restaurar"><input type="text" name="motivo" placeholder="motivo"><button class="btn sec" style="margin-top:6px">Restaurar código</button></form>{% endif %}</div>
+<div class="cartao"><h2>Histórico do código</h2><div class="rolagem" style="max-height:300px"><table class="tabela"><tbody>{% for h in hist %}<tr><td class="suave">{{ data(h.momento) }}</td><td>{{ h.operacao }}</td><td>{{ situacao(h.origem) }}</td><td class="suave">{{ h.justificativa }}</td></tr>{% endfor %}</tbody></table></div></div>
+</div></div>
+{% endblock %}

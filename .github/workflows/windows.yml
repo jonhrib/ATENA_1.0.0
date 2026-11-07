@@ -1,0 +1,48 @@
+# Gera o executável e o instalador do ATENA para Windows na nuvem do GitHub (gratuito para repositórios).
+# Uso: envie o projeto para um repositório no GitHub → aba "Actions" → "Gerar ATENA para Windows" → "Run workflow".
+# Ao terminar, baixe o artefato "ATENA-windows" (ZIP com ATENA.exe e o instalador).
+name: Gerar ATENA para Windows
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Dependências
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pyinstaller pytest
+      - name: Testes automatizados
+        run: python -m pytest -q --ignore=testes/test_e2e_navegador.py
+      - name: Executável (PyInstaller)
+        run: |
+          pyinstaller empacotamento/ATENA.spec --noconfirm --clean
+          copy .env.exemplo dist\ATENA\
+          xcopy /E /I /Y docs dist\ATENA\docs
+        shell: cmd
+      - name: Teste de fumaça do executável
+        shell: pwsh
+        run: |
+          $env:ATENA_DADOS = "$env:RUNNER_TEMP\atena_dados"
+          $p = Start-Process -FilePath dist\ATENA\ATENA.exe -ArgumentList "--sem-navegador","--porta","8765" -PassThru
+          Start-Sleep -Seconds 12
+          $r = Invoke-WebRequest -Uri http://127.0.0.1:8765/acesso -SkipHttpErrorCheck
+          if ($r.StatusCode -ne 403) { throw "ATENA.exe não respondeu como esperado ($($r.StatusCode))" }
+          Stop-Process -Id $p.Id -Force
+      - name: Instalador (Inno Setup)
+        run: |
+          choco install innosetup -y --no-progress
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" empacotamento\instalador.iss
+        shell: pwsh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ATENA-windows
+          path: |
+            dist/ATENA/
+            dist/ATENA_Instalador_*.exe

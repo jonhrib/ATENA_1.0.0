@@ -1,0 +1,65 @@
+{% extends "base.html" %}{% from "_macros.html" import icone, situacao, csrf_campo, data, chip_codigo, citacao, confirmar with context %}
+{% block titulo %}{{ t.nome }}{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><div class="titulo"><div class="migalhas"><a href="{{ url_for('mapa', uid=uid) }}">Temas</a> ›{% if t.pai %} <a href="{{ url_for('tema', uid=uid, tid=t.pai.id) }}">{{ t.pai.nome }}</a> ›{% endif %}</div>
+<h1>{{ '↳ ' if t.pai_id }}{{ t.nome }}</h1><p>{{ situacao(t.situacao, t.situacao_rotulo) }}{% if t.definicao_desatualizada %} <span class="etiqueta alerta">definição desatualizada</span>{% endif %}
+{% if t.origem == 'ia' %} <span class="etiqueta roxo">agrupamento sugerido por IA e aprovado</span>{% endif %} · {{ t.codigos|length }} códigos · {{ ev|length }} fragmentos</p></div>
+<a class="btn sec" href="{{ url_for('consulta_fragmentos', uid=uid, tema=t.id) }}">Consultar fragmentos</a>
+<a class="btn" href="{{ url_for('tema_definir', uid=uid, tid=t.id) }}">Definir e nomear (fase 5)</a></div>
+<nav class="abas"><a href="#evidencias" class="ativa">Evidências e revisão nível 1</a><a href="#confronto">Confronto com as entrevistas (nível 2)</a><a href="#estrutura">Estrutura</a><a href="#historico-tema">Histórico</a></nav>
+<div class="grade g-lado">
+<div>
+<div class="cartao" id="evidencias"><h2>Fragmentos do tema ({{ ev|length }})</h2>
+<p class="suave">Leia todos os extratos e avalie se formam um padrão coerente. Marque como representativos os que melhor ilustram o tema.</p>
+{% for f in ev %}<div class="fragmento"><div class="meta"><b>{{ f.participante_codigo or 'sem participante' }}</b> · {{ f.documento_codigo }} · nº {{ f.id }}
+{% for c in f.codigos %}<span class="chip" style="{{ '' if c.no_tema else 'opacity:.55' }}"><i style="background:{{ c.cor }}"></i>{{ c.nome }}</span>{% endfor %}
+{% if f.situacao != 'ok' %}{{ situacao(f.situacao) }}{% endif %}<a href="{{ url_for('editor', uid=uid, did=f.documento_id) }}#frag-{{ f.id }}">ver no contexto</a></div>
+<div class="texto">{{ f.texto }}</div>
+<form method="post" class="linha" style="margin-top:4px">{{ csrf_campo() }}<input type="hidden" name="acao" value="evidencia"><input type="hidden" name="fragmento_id" value="{{ f.id }}"><input type="hidden" name="ancora" value="evidencias">
+{% if f.representativa %}<input type="hidden" name="marcar" value="0"><span class="etiqueta ok">representativa</span><button class="btn-link">desmarcar</button>
+{% else %}<input type="hidden" name="marcar" value="1"><button class="btn sec pq">Marcar como representativa</button>{% endif %}</form></div>
+{% else %}<p class="suave">Sem fragmentos — associe códigos ao tema.</p>{% endfor %}</div>
+<div class="cartao" id="confronto"><h2>Confronto com o conjunto das entrevistas</h2>
+<p class="suave">Distribuição das evidências pelas entrevistas (descritivo). Releia também as entrevistas sem evidências: o tema faz sentido para o conjunto dos dados?</p>
+<table class="tabela"><tbody>{% for d in confronto %}<tr><td><a href="{{ url_for('editor', uid=uid, did=d.id) }}">{{ d.codigo }}</a></td><td class="mono">{{ d.participante or '—' }}</td>
+<td style="width:55%"><div class="barra-h"><div class="trilho"><span style="width:{{ (100 * d.n / ([confronto|map(attribute='n')|max, 1]|max))|round }}%"></span></div><div class="val"><a href="{{ url_for('consulta_fragmentos', uid=uid, tema=t.id, documento=d.id) }}">{{ d.n }}</a></div></div></td></tr>{% endfor %}</tbody></table></div>
+</div>
+<div class="painel-lateral">
+<form method="post" class="cartao destaque">{{ csrf_campo() }}<input type="hidden" name="acao" value="revisar"><h2>Registrar revisão</h2>
+<label>Nível</label><select name="nivel"><option value="1">1 — coerência com os extratos codificados</option><option value="2">2 — validade em relação ao conjunto de dados</option></select>
+<label>Coerência interna</label><textarea name="coerencia" rows="2"></textarea><label>Distinção em relação a outros temas</label><textarea name="distincao" rows="2"></textarea>
+<label>Sobreposições identificadas</label><textarea name="sobreposicao" rows="2"></textarea>
+<label>Decisão</label><select name="decisao"><option value="manter">Manter o tema</option><option value="ajustar">Ajustar (códigos/escopo)</option><option value="dividir">Dividir</option><option value="fundir">Fundir com outro</option><option value="descartar">Descartar</option><option value="voltar_dados">Voltar aos dados / recodificar</option></select>
+<label>Observação</label><textarea name="observacao" rows="2"></textarea><button class="btn" style="margin-top:8px">Registrar revisão</button>
+<p class="ajuda">Com revisões de nível 1 e 2 e decisão “manter”, o tema passa a “revisado”. Nada é decidido automaticamente.</p></form>
+<div class="cartao" id="estrutura"><h2>Códigos do tema</h2>
+{% for c in t.codigos %}<div class="linha" style="margin:3px 0">{{ chip_codigo(c, uid) }}<span class="flex1"></span>
+{{ confirmar(url_for('tema', uid=uid, tid=t.id), 'retirar', 'Retirar “' ~ c.nome ~ '” deste tema?', {'acao':'remover_codigo','codigo_id':c.id}, 'btn-link') }}</div>{% else %}<p class="suave">Nenhum código.</p>{% endfor %}
+<form method="post" style="margin-top:8px">{{ csrf_campo() }}<input type="hidden" name="acao" value="add_codigos"><details class="dobra"><summary>Agrupar mais códigos</summary>
+<div class="lista-escolha">{% for c in codigos if c.id not in t.codigos|map(attribute='id')|list %}<label><input type="checkbox" name="codigos" value="{{ c.id }}">{{ c.nome }}</label>{% endfor %}</div>
+<input type="text" name="justificativa" placeholder="justificativa" style="margin-top:6px"><button class="btn sec pq" style="margin-top:6px">Agrupar</button></details></form>
+{% if t.subtemas %}<h3>Subtemas</h3>{% for s in t.subtemas %}<div><a href="{{ url_for('tema', uid=uid, tid=s.id) }}">↳ {{ s.nome }}</a> {{ situacao(s.situacao) }}</div>{% endfor %}{% endif %}
+<details class="dobra"><summary>Editar nome e descrição</summary><form method="post">{{ csrf_campo() }}<input type="hidden" name="acao" value="editar">
+<label>Nome</label><input type="text" name="nome" value="{{ t.nome }}"><label>Descrição</label><textarea name="descricao" rows="3">{{ t.descricao }}</textarea>
+<label>Justificativa</label><textarea name="justificativa" rows="2">{{ t.justificativa }}</textarea><input type="text" name="motivo" placeholder="motivo" style="margin-top:4px"><button class="btn sec pq" style="margin-top:6px">Salvar</button></form></details>
+<details class="dobra"><summary>Hierarquia (subtema)</summary><form method="post" class="form-confirmar" data-confirmar="Alterar a hierarquia deste tema?" data-justificativa="1">{{ csrf_campo() }}<input type="hidden" name="acao" value="pai"><input type="hidden" name="justificativa">
+<select name="pai_id"><option value="">— tema principal —</option>{% for o in todos if o.id != t.id and not o.pai_id %}<option value="{{ o.id }}" {{ 'selected' if o.id == t.pai_id }}>{{ o.nome }}</option>{% endfor %}</select><button class="btn sec pq" style="margin-top:6px">Aplicar</button></form></details>
+<details class="dobra"><summary>Dividir tema</summary><form method="post" class="form-confirmar" data-confirmar="Dividir o tema? Os códigos escolhidos formarão um novo tema." data-justificativa="1">{{ csrf_campo() }}<input type="hidden" name="acao" value="dividir"><input type="hidden" name="justificativa">
+<label>Nome do novo tema</label><input type="text" name="novo_nome" required><div class="lista-escolha">{% for c in t.codigos %}<label><input type="checkbox" name="codigos" value="{{ c.id }}">{{ c.nome }}</label>{% endfor %}</div>
+<label class="opcao"><input type="checkbox" name="como_subtema" value="1"> criar como subtema deste tema (os códigos também permanecem aqui)</label><button class="btn sec pq">Dividir</button></form></details>
+<details class="dobra"><summary>Fundir com outro tema</summary><form method="post" class="form-confirmar" data-confirmar="Fundir este tema no destino? Ele ficará como “fundido” e poderá ser reativado." data-justificativa="1">{{ csrf_campo() }}<input type="hidden" name="acao" value="fundir"><input type="hidden" name="justificativa">
+<select name="destino">{% for o in todos if o.id != t.id %}<option value="{{ o.id }}">{{ o.nome }}</option>{% endfor %}</select><button class="btn sec pq" style="margin-top:6px">Fundir</button></form></details>
+<div class="linha" style="margin-top:10px">
+{% if t.situacao in ('descartado','fundido') %}<form method="post">{{ csrf_campo() }}<input type="hidden" name="acao" value="reativar"><input type="text" name="justificativa" placeholder="motivo"><button class="btn sec pq">Reativar tema</button></form>
+{% else %}{{ confirmar(url_for('tema', uid=uid, tid=t.id), 'Descartar tema', 'Descartar este tema? Ele poderá ser reativado; os códigos voltam a ficar disponíveis.', {'acao':'situacao','situacao':'descartado'}) }}
+{% if t.situacao in ('definido','revisado') %}{{ confirmar(url_for('tema', uid=uid, tid=t.id), 'Reabrir para revisão', 'Devolver o tema para revisão?', {'acao':'situacao','situacao':'em_revisao'}, 'btn sec pq') }}{% endif %}{% endif %}</div></div>
+{% if ia_ativa %}<form method="post" action="{{ url_for('ia_preparar', uid=uid) }}" class="cartao">{{ csrf_campo() }}<input type="hidden" name="tema_id" value="{{ t.id }}">
+<h3>{{ icone('ia') }} Apoio da IA</h3><select name="operacao"><option value="revisar_coerencia">Apontar possíveis problemas de coerência</option><option value="sugerir_nomes_tema">Sugerir nomes</option>
+<option value="organizar_evidencias">Sugerir organização das evidências</option><option value="sintetizar_tema">Redigir síntese preliminar</option></select>
+<button class="btn roxo pq" style="margin-top:6px">Preparar envio (com prévia)</button></form>{% endif %}
+<div class="cartao"><h3>Revisões registradas</h3>{% for r in t.revisoes %}<div class="fragmento"><div class="meta">Nível {{ r.nivel }} · {{ data(r.criado_em) }} · decisão: <b>{{ r.decisao }}</b></div>
+{% if r.coerencia %}<div><b>Coerência:</b> {{ r.coerencia }}</div>{% endif %}{% if r.distincao %}<div><b>Distinção:</b> {{ r.distincao }}</div>{% endif %}{% if r.sobreposicao %}<div><b>Sobreposição:</b> {{ r.sobreposicao }}</div>{% endif %}{% if r.observacao %}<div class="suave">{{ r.observacao }}</div>{% endif %}</div>
+{% else %}<p class="suave">Nenhuma revisão ainda.</p>{% endfor %}</div>
+<div class="cartao" id="historico-tema"><h3>Histórico do tema</h3><div class="rolagem" style="max-height:260px"><table class="tabela"><tbody>{% for h in hist %}<tr><td class="suave">{{ data(h.momento) }}</td><td>{{ h.operacao|replace('_',' ') }}</td><td>{{ situacao(h.origem) }}</td><td class="suave">{{ h.justificativa }}</td></tr>{% endfor %}</tbody></table></div></div>
+</div></div>
+{% endblock %}

@@ -1,0 +1,13 @@
+# ATENA — dependências de execução (Python 3.11 a 3.13)
+Flask>=3.0,<4
+waitress>=3.0          # servidor local de produção (o ATENA usa o servidor do Werkzeug se ele faltar)
+cryptography>=42       # AES-256-GCM, scrypt (cofre)
+python-docx>=1.1       # leitura e geração de DOCX
+openpyxl>=3.1          # exportação XLSX
+reportlab>=4.0         # geração de PDF
+pypdf>=4.0             # extração de texto de PDF
+charset-normalizer>=3  # detecção de codificação de arquivos de texto
+# Opcionais:
+#   pdfplumber      — extração de PDF com melhor layout
+#   PyMuPDF         — extração de PDF (licença AGPL: verifique antes de redistribuir)
+#   spacy + pt_core_news_lg — reforço na detecção de nomes (não é necessário)

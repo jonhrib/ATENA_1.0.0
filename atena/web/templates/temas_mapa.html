@@ -1,0 +1,40 @@
+{% extends "base.html" %}{% from "_macros.html" import icone, situacao, csrf_campo, chip_codigo, vazio with context %}
+{% block titulo %}Temas · mapa temático{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><div class="titulo"><div class="migalhas">Fase 3 — {{ fase.nome }} · {{ situacao(fase.situacao, fase.situacao_rotulo) }}</div><h1>Busca por temas</h1>
+<p>Agrupe códigos em temas e subtemas candidatos. Arraste um código para dentro de um tema no mapa para reorganizar; cada movimento pede uma justificativa e fica no histórico.
+Os temas são construídos pela sua análise, não pela frequência dos códigos.</p></div>
+<button class="btn" type="button" data-abrir="dlg-tema">{{ icone('mais') }}Novo tema</button></div>
+<nav class="abas"><a href="{{ url_for('mapa', uid=uid) }}" class="ativa">3 · Mapa e agrupamento</a><a href="{{ url_for('revisao', uid=uid) }}">4 · Revisão</a><a href="{{ url_for('definicao', uid=uid) }}">5 · Definição e nomeação</a></nav>
+{% if pendentes_ia %}<div class="aviso info">{{ icone('ia') }}<div class="flex1">{{ pendentes_ia|length }} sugestão(ões) de agrupamento da IA aguardam sua decisão.</div><a class="btn sec pq" href="{{ url_for('ia_painel', uid=uid) }}">Revisar</a></div>{% endif %}
+<div class="grade g-lado">
+<div class="cartao" style="padding:10px">
+<div class="linha" style="margin-bottom:8px"><label class="opcao" style="margin:0"><input type="checkbox" id="mostrar-cooc" checked> mostrar coocorrência de códigos no mesmo fragmento</label>
+<span class="flex1"></span><button class="btn sec pq" id="mapa-reorganizar" type="button">Reorganizar</button><button class="btn sec pq" id="mapa-png" type="button">{{ icone('baixar') }}Imagem</button></div>
+<div id="mapa" data-url="{{ url_for('api_mapa', uid=uid) }}" data-url-mover="{{ url_for('api_mapa_mover', uid=uid) }}" data-url-tema="{{ url_for('tema', uid=uid, tid=0)[:-1] }}" data-url-codigo="{{ url_for('codigo', uid=uid, cid=0)[:-1] }}"></div>
+<p class="ajuda">Retângulos: temas (e subtemas dentro deles). Círculos: códigos (tamanho ∝ nº de fragmentos, apenas descritivo). Arraste um código para outro tema ou para a área “Códigos sem tema”. Duplo clique abre o item.</p></div>
+<div class="painel-lateral">
+<div class="cartao"><h3>Temas ({{ arvore|length }})</h3>
+{% for t in arvore %}<div style="border-left:4px solid {{ t.cor }};padding:4px 0 4px 10px;margin-bottom:10px">
+<div class="linha"><a href="{{ url_for('tema', uid=uid, tid=t.id) }}" class="flex1"><b>{{ t.nome }}</b></a>{{ situacao(t.situacao, t.situacao_rotulo) }}</div>
+<div class="suave" style="font-size:.8rem">{{ t.n_codigos }} códigos · {{ t.n_fragmentos }} fragmentos · {{ t.n_participantes }} participantes</div>
+<div>{% for c in t.codigos %}{{ chip_codigo(c, uid) }}{% endfor %}</div>
+{% for s in t.subtemas %}<div style="margin:4px 0 0 12px"><a href="{{ url_for('tema', uid=uid, tid=s.id) }}">↳ {{ s.nome }}</a> <small class="suave">({{ s.codigos|length }})</small><div>{% for c in s.codigos %}{{ chip_codigo(c, uid) }}{% endfor %}</div></div>{% endfor %}</div>
+{% else %}{{ vazio('Nenhum tema ainda.', 'temas') }}{% endfor %}</div>
+<div class="cartao"><h3>Códigos sem tema ({{ sem_tema|length }})</h3>{% for c in sem_tema %}{{ chip_codigo(c, uid) }}{% else %}<p class="suave">Todos os códigos estão em algum tema.</p>{% endfor %}
+<p class="ajuda">Nenhum código precisa ser descartado nesta fase; mantenha-os aqui até decidir.</p></div>
+{% if ia_ativa %}<form method="post" action="{{ url_for('ia_preparar', uid=uid) }}" class="cartao">{{ csrf_campo() }}<input type="hidden" name="operacao" value="sugerir_agrupamentos">
+<h3>{{ icone('ia') }} Pedir sugestões de agrupamento</h3><p class="suave">Envia nomes e descrições dos códigos e até 3 trechos anonimizados de cada um. Você verá a prévia antes de qualquer envio.</p>
+<button class="btn roxo pq">Preparar envio</button></form>{% endif %}
+</div></div>
+<dialog id="dlg-tema"><form method="post">{{ csrf_campo() }}<div class="cab"><h3>Novo tema candidato</h3></div><div class="corpo">
+<label>Nome (provisório)</label><input type="text" name="nome" required><label>Descrição inicial</label><textarea name="descricao" rows="2"></textarea>
+<label>É subtema de</label><select name="pai_id"><option value="">— tema principal —</option>{% for t in arvore if not t.pai_id %}<option value="{{ t.id }}">{{ t.nome }}</option>{% endfor %}</select>
+<label>Códigos agrupados</label><input type="search" placeholder="Filtrar…" data-filtrar="#lista-cod-tema"><div class="lista-escolha" id="lista-cod-tema">{% for c in codigos %}<label data-texto="{{ c.nome }}"><input type="checkbox" name="codigos" value="{{ c.id }}"><span class="chip" style="margin:0"><i style="background:{{ c.cor }}"></i>{{ c.nome }}</span></label>{% endfor %}</div>
+<label>Justificativa do agrupamento</label><textarea name="justificativa" rows="2" placeholder="Que padrão de significado une estes códigos?"></textarea></div>
+<div class="pe"><button type="button" class="btn sec" data-fechar>Cancelar</button><button class="btn">Criar tema</button></div></form></dialog>
+<dialog id="dlg-mover"><form method="dialog"><div class="cab"><h3>Reorganizar agrupamento</h3></div><div class="corpo"><p id="mover-texto"></p>
+<label>Justificativa</label><textarea id="mover-just" rows="3" placeholder="Por que este código pertence a este tema?"></textarea></div>
+<div class="pe"><button class="btn sec" value="cancelar">Cancelar</button><button class="btn" value="ok">Confirmar</button></div></form></dialog>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='vendor/cytoscape.min.js') }}"></script><script src="{{ url_for('static', filename='js/mapa.js') }}"></script>{% endblock %}

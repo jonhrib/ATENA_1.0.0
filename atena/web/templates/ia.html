@@ -1,0 +1,34 @@
+{% extends "base.html" %}{% from "_macros.html" import icone, situacao, csrf_campo, data with context %}
+{% block titulo %}Inteligência artificial{% endblock %}
+{% block conteudo %}
+{% set codigos_nomes = {} %}{% for c in codigos %}{% set _ = codigos_nomes.update({c.id: c.nome}) %}{% endfor %}
+<div class="cabecalho"><div class="titulo"><h1>{{ icone('ia') }} Inteligência artificial</h1>
+<p>Integração opcional com a API da OpenAI. Sugestões só produzem efeito depois que você as aceita, edita ou rejeita. Nenhum dado é enviado sem prévia e confirmação.</p></div></div>
+{% if not c.ia_habilitada or not tem_chave %}<div class="aviso info">{{ icone('info') }}<div class="flex1">A integração está {{ 'desativada' if not c.ia_habilitada else 'ativa, mas sem chave configurada' }}. O ATENA funciona normalmente sem IA.</div>
+<a class="btn sec pq" href="{{ url_for('configuracoes') }}#ia">Configurar</a></div>{% endif %}
+<div class="grade g-lado">
+<div>
+<div class="cartao"><h2>Sugestões pendentes ({{ sugestoes|length }})</h2>
+{% for s in sugestoes %}{% include "_sugestao.html" %}{% else %}<p class="suave">Nenhuma sugestão pendente.</p>{% endfor %}</div>
+<div class="cartao"><h2>Registro de envios</h2><table class="tabela"><thead><tr><th>#</th><th>Data</th><th>Operação</th><th>Modelo</th><th>Situação</th><th class="num">Tokens</th><th class="num">US$</th><th></th></tr></thead><tbody>
+{% for i in interacoes %}<tr><td class="mono">{{ i.id }}</td><td class="suave">{{ data(i.criado_em) }}</td><td>{{ i.operacao_rotulo }}</td><td class="mono">{{ i.modelo }}</td><td>{{ situacao(i.situacao) }}</td>
+<td class="num">{{ i.tokens_entrada }}+{{ i.tokens_saida }}</td><td class="num">{{ '%.4f'|format(i.custo_estimado or 0) }}</td><td><a href="{{ url_for('ia_interacao', uid=uid, iid=i.id) }}">abrir</a></td></tr>
+{% else %}<tr><td colspan="8" class="suave">Nenhum envio.</td></tr>{% endfor %}</tbody></table></div>
+<div class="cartao"><h2>Sugestões já decididas</h2><table class="tabela"><tbody>{% for s in decididas if s.situacao != 'pendente' %}<tr><td>{{ s.tipo }}</td><td>{{ s.conteudo_obj.nome or s.conteudo_obj.tema or s.conteudo_obj.trecho or '' }}</td><td>{{ situacao(s.situacao) }}</td><td class="suave">{{ data(s.decidido_em) }}</td><td class="suave">{{ s.decisao_observacao }}</td></tr>{% endfor %}</tbody></table></div>
+</div>
+<div class="painel-lateral">
+<div class="cartao"><h3>Gasto estimado neste mês</h3><p style="font-size:1.4rem;margin:0"><b>US$ {{ '%.4f'|format(gasto) }}</b></p>
+<p class="suave" style="font-size:.85rem">Limite configurado: US$ {{ c.ia_limite_mensal_usd }} · modelo {{ c.ia_modelo }}. Valores calculados com os preços configurados; confira o consumo real em platform.openai.com/usage.</p></div>
+<form method="post" action="{{ url_for('ia_preparar', uid=uid) }}" class="cartao">{{ csrf_campo() }}<h3>Preparar um envio</h3>
+<label>Operação</label><select name="operacao" id="op-ia">
+<option value="sugerir_agrupamentos">Sugerir agrupamentos de códigos em temas</option><option value="comparar_temas">Comparar temas (distinção/sobreposição)</option>
+<option value="revisar_coerencia">Coerência interna de um tema</option><option value="sugerir_nomes_tema">Nomes para um tema</option>
+<option value="sintetizar_tema">Síntese preliminar de um tema</option><option value="organizar_evidencias">Organizar evidências de um tema</option>
+<option value="verificar_privacidade">Procurar dados pessoais remanescentes num documento anonimizado</option><option value="revisar_texto">Revisar texto de um relatório</option></select>
+<label>Tema (quando aplicável)</label><select name="tema_id"><option value="">—</option>{% for t in temas %}<option value="{{ t.id }}">{{ t.nome }}</option>{% endfor %}</select>
+<label>Temas a comparar</label><select name="temas" multiple size="4">{% for t in temas %}<option value="{{ t.id }}">{{ t.nome }}</option>{% endfor %}</select>
+<label>Documento (verificação de privacidade)</label><select name="documento_id"><option value="">—</option>{% for d in documentos if d.versao_numero %}<option value="{{ d.id }}">{{ d.codigo }}</option>{% endfor %}</select>
+<label>Relatório (revisão de texto)</label><select name="relatorio_id"><option value="">—</option>{% for r in relatorios %}<option value="{{ r.id }}">{{ r.titulo }}</option>{% endfor %}</select>
+<button class="btn roxo" style="margin-top:10px">Preparar (você verá a prévia)</button>
+<p class="ajuda">Para sugestões de códigos, selecione um trecho no editor e use “Sugerir códigos (IA)”.</p></form></div></div>
+{% endblock %}

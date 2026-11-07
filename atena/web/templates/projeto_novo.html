@@ -1,0 +1,30 @@
+{% extends "base.html" %}{% from "_macros.html" import icone, csrf_campo with context %}
+{% block titulo %}Novo projeto{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><div class="titulo"><div class="migalhas"><a href="{{ url_for('inicio') }}">Projetos</a> ›</div><h1>Novo projeto de pesquisa</h1>
+<p>Os campos metodológicos podem ser completados depois. Apenas o nome e a senha do cofre são obrigatórios.</p></div></div>
+<form method="post">{{ csrf_campo() }}
+<div class="grade g-lado">
+<div class="cartao">
+<label for="nome">Nome do projeto *</label><input id="nome" type="text" name="nome" required value="{{ dados.nome }}">
+<label>Descrição</label><textarea name="descricao" rows="2">{{ dados.descricao }}</textarea>
+<div class="grade g2"><div><label>Problema de pesquisa</label><textarea name="problema" rows="3">{{ dados.problema }}</textarea></div>
+<div><label>Pergunta de pesquisa</label><textarea name="pergunta" rows="3">{{ dados.pergunta }}</textarea></div></div>
+<label>Objetivo</label><textarea name="objetivo" rows="2">{{ dados.objetivo }}</textarea>
+<label>Metodologia</label><input type="text" name="metodologia" value="{{ dados.metodologia or 'Análise temática indutiva (Braun e Clarke, 2006)' }}">
+<label>Referências metodológicas</label><textarea name="referencias" rows="2" placeholder="Ex.: BRAUN, V.; CLARKE, V. Using thematic analysis in psychology. Qualitative Research in Psychology, 3(2), 77–101, 2006.">{{ dados.referencias }}</textarea>
+<label>Responsável</label><input type="text" name="responsavel" value="{{ dados.responsavel }}">
+</div>
+<div>
+<div class="cartao destaque"><h3>{{ icone('cofre') }} Senha do cofre *</h3>
+<p class="suave">O cofre guarda, cifrados, os documentos originais e a correspondência entre os códigos anônimos e as identidades reais.
+Sem esta senha (ou o código de recuperação que será mostrado a seguir) esses dados não podem ser lidos — nem por você.</p>
+<label>Senha (mínimo 8 caracteres)</label><input type="password" name="senha" minlength="8" required autocomplete="new-password">
+<label>Repita a senha</label><input type="password" name="senha2" minlength="8" required autocomplete="new-password"></div>
+<div class="cartao"><h3>Termos protegidos</h3>
+<p class="suave">Termos que <b>nunca</b> serão substituídos na anonimização (ex.: nomes de instituições relevantes para a pesquisa).</p>
+{% for nome, itens in listas.items() %}<label class="opcao"><input type="checkbox" name="listas" value="{{ nome }}"> {{ nome|replace('_',' ')|capitalize }} <small>({{ itens|length }} termos)</small></label>{% endfor %}
+<label>Outros termos (um por linha)</label><textarea name="termos_extra" rows="3">{{ dados.termos_extra }}</textarea></div>
+<button class="btn">{{ icone('mais') }}Criar projeto</button>
+</div></div></form>
+{% endblock %}

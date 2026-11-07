@@ -1,0 +1,66 @@
+{% extends "base.html" %}{% from "_macros.html" import icone, situacao, data with context %}
+{% block titulo %}Visualizações{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><div class="titulo"><h1>Visualizações</h1><p>Ferramentas de apoio. Frequências e contagens são <b>informações descritivas</b> e nunca prova de relevância temática. Toda célula ou barra leva aos fragmentos de origem.</p></div></div>
+<nav class="abas">{% for k, r in [('mapa','Mapa temático'),('frequencia','Frequência de códigos'),('matriz','Matriz por participante'),('temas_entrevistas','Temas × entrevistas'),('distribuicao','Fragmentos por tema'),('comparacao','Comparar entrevistas'),('linha_tempo','Linha do tempo das decisões'),('lexical','Exploração lexical')] %}
+<a href="{{ url_for('visualizacoes', uid=uid, aba=k) }}" class="{{ 'ativa' if aba == k }}">{{ r }}</a>{% endfor %}</nav>
+
+{% if aba == 'mapa' %}
+<div class="cartao"><p>O mapa temático interativo (temas, subtemas, códigos e coocorrências) fica na fase 3.</p><a class="btn" href="{{ url_for('mapa', uid=uid) }}">{{ icone('temas') }}Abrir o mapa temático</a></div>
+
+{% elif aba == 'frequencia' %}
+<form class="cartao compacto linha" method="get"><input type="hidden" name="aba" value="frequencia">
+<select name="documento"><option value="">todas as entrevistas</option>{% for d in documentos %}<option value="{{ d.id }}" {{ 'selected' if filtros.documento == d.id|string }}>{{ d.codigo }}</option>{% endfor %}</select>
+<select name="participante"><option value="">todos os participantes</option>{% for p in participantes %}<option value="{{ p.id }}" {{ 'selected' if filtros.participante == p.id|string }}>{{ p.codigo }}</option>{% endfor %}</select><button class="btn sec">Filtrar</button></form>
+<div class="cartao">{% set mx = [dados.freq|map(attribute='fragmentos')|max if dados.freq else 1, 1]|max %}
+{% for c in dados.freq %}<div class="barra-h"><div class="rot"><a href="{{ url_for('codigo', uid=uid, cid=c.id) }}">{{ c.nome }}</a></div>
+<div class="trilho"><span style="width:{{ (100 * c.fragmentos / mx)|round }}%;background:{{ c.cor }}"></span></div>
+<div class="val"><a href="{{ url_for('consulta_fragmentos', uid=uid, codigo=c.id, documento=filtros.documento, participante=filtros.participante) }}">{{ c.fragmentos }} frag.</a></div><div class="val">{{ c.participantes }} part.</div></div>
+{% else %}<p class="suave">Nenhum código com fragmentos.</p>{% endfor %}</div>
+
+{% elif aba in ('matriz', 'temas_entrevistas') %}
+{% if aba == 'matriz' %}<form class="cartao compacto linha" method="get"><input type="hidden" name="aba" value="matriz">
+<select name="por"><option value="codigo" {{ 'selected' if filtros.por != 'tema' }}>linhas: códigos</option><option value="tema" {{ 'selected' if filtros.por == 'tema' }}>linhas: temas</option></select><button class="btn sec">Atualizar</button></form>{% endif %}
+{% set m = dados.m %}<div class="cartao rolagem" style="max-height:none"><table class="tabela calor"><thead><tr><th></th>{% for c in m.colunas %}<th class="num">{{ c.codigo }}{% if c.participante %}<br><small>{{ c.participante }}</small>{% endif %}</th>{% endfor %}</tr></thead><tbody>
+{% for l in m.linhas %}<tr><td>{% if l.tipo == 'codigo' %}<a href="{{ url_for('codigo', uid=uid, cid=l.id) }}">{{ l.nome }}</a>{% else %}<a href="{{ url_for('tema', uid=uid, tid=l.id) }}">{{ l.nome }}</a>{% endif %}</td>
+{% for v in l.valores %}{% set col = m.colunas[loop.index0] %}{% set q = {'codigo': l.id} if l.tipo == 'codigo' else {'tema': l.id} %}{% set _ = q.update({'participante': col.id} if aba == 'matriz' else {'documento': col.id}) %}<td class="c">{% if v %}<a style="background:rgba(91,63,160,{{ 0.1 + 0.65 * v / m.maximo }})" href="{{ url_for('consulta_fragmentos', uid=uid, **q) }}">{{ v }}</a>{% else %}<span class="suave">·</span>{% endif %}</td>{% endfor %}</tr>
+{% else %}<tr><td class="suave">Sem dados.</td></tr>{% endfor %}</tbody></table>
+<p class="ajuda">Presença (nº de fragmentos). Ausência não significa que o assunto não apareceu — significa apenas que não foi codificado.</p></div>
+
+{% elif aba == 'distribuicao' %}
+<div class="cartao">{% set mx = [dados.dist|map(attribute='fragmentos')|max if dados.dist else 1, 1]|max %}
+{% for t in dados.dist %}<div class="barra-h"><div class="rot"><a href="{{ url_for('tema', uid=uid, tid=t.id) }}">{{ t.nome }}</a></div>
+<div class="trilho"><span style="width:{{ (100 * t.fragmentos / mx)|round }}%;background:var(--roxo)"></span></div>
+<div class="val"><a href="{{ url_for('consulta_fragmentos', uid=uid, tema=t.id) }}">{{ t.fragmentos }} frag.</a></div><div class="val">{{ t.participantes }} part.</div></div>{% else %}<p class="suave">Nenhum tema.</p>{% endfor %}</div>
+
+{% elif aba == 'comparacao' %}
+<form class="cartao compacto linha" method="get"><input type="hidden" name="aba" value="comparacao">
+<select name="a">{% for d in documentos if d.versao_numero %}<option value="{{ d.id }}" {{ 'selected' if filtros.a == d.id|string }}>{{ d.codigo }} · {{ d.participante_codigo }}</option>{% endfor %}</select> ×
+<select name="b">{% for d in documentos if d.versao_numero %}<option value="{{ d.id }}" {{ 'selected' if filtros.b == d.id|string or (not filtros.b and loop.index == 2) }}>{{ d.codigo }} · {{ d.participante_codigo }}</option>{% endfor %}</select><button class="btn sec">Comparar</button></form>
+{% if dados.comp %}<div class="grade g3"><div class="cartao"><h3>Só na primeira</h3>{% for n in dados.comp.so_a %}<span class="chip">{{ n }}</span>{% else %}<span class="suave">—</span>{% endfor %}</div>
+<div class="cartao"><h3>Em ambas</h3>{% for n in dados.comp.comuns %}<span class="chip">{{ n }}</span>{% else %}<span class="suave">—</span>{% endfor %}</div>
+<div class="cartao"><h3>Só na segunda</h3>{% for n in dados.comp.so_b %}<span class="chip">{{ n }}</span>{% else %}<span class="suave">—</span>{% endfor %}</div></div>
+<div class="cartao"><table class="tabela"><thead><tr><th>Código</th><th class="num">Primeira</th><th class="num">Segunda</th></tr></thead><tbody>{% for l in dados.comp.linhas %}<tr><td>{{ l.codigo }}</td><td class="num">{{ l.a }}</td><td class="num">{{ l.b }}</td></tr>{% endfor %}</tbody></table></div>{% endif %}
+
+{% elif aba == 'linha_tempo' %}
+<div class="grade g-lado"><div class="cartao"><h2>Decisões analíticas</h2><div class="linha-tempo">
+{% for e in dados.eventos %}<div class="ev {{ 'ia' if e.origem == 'ia' }}"><div class="suave" style="font-size:.8rem">{{ data(e.momento) }} · {{ e.entidade }} · {{ situacao(e.origem) }}{% if e.fase %} · fase {{ e.fase }}{% endif %}</div>
+<div><b>{{ e.operacao|replace('_',' ') }}</b> {{ e.resumo }}</div>{% if e.justificativa %}<div class="suave" style="font-size:.85rem">{{ e.justificativa }}</div>{% endif %}</div>{% else %}<p class="suave">Nada ainda.</p>{% endfor %}</div></div>
+<div class="cartao"><h3>Atividade por dia</h3>{% set mx = [dados.dias|map(attribute='n')|max if dados.dias else 1, 1]|max %}
+{% for d in dados.dias %}<div class="barra-h"><div class="rot" style="min-width:90px;width:90px">{{ d.dia }}</div><div class="trilho"><span style="width:{{ (100 * d.n / mx)|round }}%"></span></div><div class="val">{{ d.n }}</div></div>{% endfor %}
+<p class="ajuda"><a href="{{ url_for('historico', uid=uid) }}">Histórico completo e pesquisável ›</a></p></div></div>
+
+{% elif aba == 'lexical' %}
+<form class="cartao compacto linha" method="get"><input type="hidden" name="aba" value="lexical">
+<select name="documento"><option value="">corpus inteiro</option>{% for d in documentos if d.versao_numero %}<option value="{{ d.id }}" {{ 'selected' if filtros.documento == d.id|string }}>{{ d.codigo }}</option>{% endfor %}</select>
+<select name="n"><option value="1">palavras</option><option value="2" {{ 'selected' if filtros.n == '2' }}>bigramas</option><option value="3" {{ 'selected' if filtros.n == '3' }}>trigramas</option></select>
+<label class="opcao" style="margin:0"><input type="checkbox" name="todas" value="1" {{ 'checked' if filtros.todas }}> incluir falas do entrevistador</label>
+<input type="search" name="termo" value="{{ filtros.termo or '' }}" placeholder="concordância (KWIC) de um termo…" style="max-width:260px"><button class="btn sec">Atualizar</button></form>
+<div class="grade g-lado-esq"><div class="cartao"><h3>Termos mais frequentes</h3><p class="ajuda">Apoio à familiarização; palavras vazias e códigos de anonimização removidos.</p>
+<table class="tabela"><tbody>{% for w in dados.palavras %}<tr><td><a href="{{ url_for('visualizacoes', uid=uid, aba='lexical', termo=w.termo, documento=filtros.documento) }}">{{ w.termo }}</a></td><td class="num">{{ w.ocorrencias }}</td><td class="num suave">{{ w.documentos }} doc.</td></tr>{% endfor %}</tbody></table></div>
+<div class="cartao"><h3>Concordância{% if filtros.termo %}: “{{ filtros.termo }}” ({{ dados.kwic|length }}){% endif %}</h3>
+{% for k in dados.kwic %}<div style="font-family:var(--fonte-leitura);font-size:.94rem;border-bottom:1px solid var(--borda);padding:4px 0"><small class="suave">{{ k.participante or k.documento }}</small>
+<span class="suave">…{{ k.esquerda }}</span> <a href="{{ url_for('editor', uid=uid, did=k.documento_id, modo='leitura') }}"><b>{{ k.termo }}</b></a> <span class="suave">{{ k.direita }}…</span></div>
+{% else %}<p class="suave">Clique num termo ou digite um termo acima.</p>{% endfor %}</div></div>
+{% endif %}
+{% endblock %}

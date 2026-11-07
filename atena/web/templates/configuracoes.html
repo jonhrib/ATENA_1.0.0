@@ -1,0 +1,60 @@
+{% extends "base.html" %}{% from "_macros.html" import icone, csrf_campo, data with context %}
+{% block titulo %}Configurações{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><div class="titulo"><h1>Configurações</h1><p>Preferências gerais do ATENA neste computador.</p></div></div>
+<div class="grade g2">
+<div>
+<form method="post" action="{{ url_for('configuracoes_salvar') }}" class="cartao" id="ia">{{ csrf_campo() }}<input type="hidden" name="grupo" value="ia">
+<h2>{{ icone('ia') }} Inteligência artificial (opcional)</h2>
+<p class="suave">Sem chave configurada, o ATENA funciona normalmente. Com a integração ativa, <b>nada é enviado automaticamente</b>: cada envio mostra
+uma prévia do conteúdo, a finalidade e a verificação de privacidade, e só acontece após sua confirmação.</p>
+<label class="opcao"><input type="checkbox" name="ia_habilitada" value="1" {{ 'checked' if c.ia_habilitada }}> Ativar a integração com a API da OpenAI</label>
+<div class="grade g2"><div><label>Modelo</label><input type="text" name="ia_modelo" value="{{ c.ia_modelo }}"><div class="ajuda">Padrão: gpt-6-luna (o mais econômico). Alternativa: gpt-6.1-terra. Confira a lista ao testar a conexão.</div></div>
+<div><label>Limite mensal de gastos (US$)</label><input type="text" name="ia_limite_mensal_usd" value="{{ c.ia_limite_mensal_usd }}"><div class="ajuda">0 = sem limite. Controle interno do ATENA; configure também um limite na OpenAI.</div></div>
+<div><label>Preço de entrada (US$/1 milhão de tokens)</label><input type="text" name="ia_preco_entrada" value="{{ c.ia_preco_entrada }}"></div>
+<div><label>Preço de saída (US$/1 milhão de tokens)</label><input type="text" name="ia_preco_saida" value="{{ c.ia_preco_saida }}"></div>
+<div><label>Máximo de caracteres por envio</label><input type="text" name="ia_max_caracteres_envio" value="{{ c.ia_max_caracteres_envio }}"></div>
+<div><label>Temperatura</label><input type="text" name="ia_temperatura" value="{{ c.ia_temperatura }}"></div></div>
+<details class="dobra"><summary>Avançado</summary><label>URL da API</label><input type="text" name="ia_url_base" value="{{ c.ia_url_base }}">
+<label>Tempo limite (segundos)</label><input type="text" name="ia_tempo_limite_s" value="{{ c.ia_tempo_limite_s }}"></details>
+<button class="btn" style="margin-top:10px">Salvar configurações de IA</button></form>
+<div class="cartao"><h2>Chave da API</h2>
+{% if tem_chave %}<p>Chave configurada: <span class="mono">{{ chave_mascara }}</span><br><span class="suave">{{ mecanismo }}</span></p>
+{% else %}<p class="suave">Nenhuma chave configurada. Veja o tutorial em <code>docs/TUTORIAL_API_OPENAI.md</code> (também resumido abaixo).</p>{% endif %}
+<form method="post" action="{{ url_for('configuracoes_chave') }}">{{ csrf_campo() }}
+<label>Colar nova chave</label><input type="password" name="chave" placeholder="sk-..." autocomplete="off">
+<div class="linha" style="margin-top:8px"><button class="btn sec" name="acao" value="salvar">Guardar chave</button>
+{% if tem_chave %}<button class="btn perigo" name="acao" value="remover" formnovalidate>Remover chave</button>{% endif %}
+<button class="btn sec" type="button" id="testar-ia" data-url="{{ url_for('configuracoes_testar') }}">Testar conexão</button></div></form>
+<p id="resultado-teste" style="margin-top:8px"></p>
+<details class="dobra"><summary>Como obter e proteger a chave (resumo)</summary><ol>
+<li>Acesse <b>platform.openai.com</b>, crie uma conta e, em <i>Billing</i>, adicione crédito (pré-pago) e um limite de gastos.</li>
+<li>Em <i>API keys</i>, clique em <i>Create new secret key</i>, dê um nome (ex.: “ATENA”) e copie a chave (começa com <code>sk-</code>). Ela só é mostrada uma vez.</li>
+<li>Cole a chave acima e clique em <b>Guardar chave</b>. No Windows ela é protegida pelo DPAPI (vinculada à sua conta de usuário) e nunca vai para o banco de dados nem para backups.</li>
+<li>Clique em <b>Testar conexão</b>. O teste apenas lista os modelos disponíveis e não envia dados da pesquisa.</li>
+<li>Acompanhe os custos em <b>platform.openai.com/usage</b> e no painel de IA do projeto (estimativa local). Revogue a chave na OpenAI se o computador for compartilhado ou perdido.</li></ol></details></div>
+</div>
+<div>
+<form method="post" action="{{ url_for('configuracoes_salvar') }}" class="cartao" id="backup">{{ csrf_campo() }}<input type="hidden" name="grupo" value="backup">
+<h2>{{ icone('backup') }} Backup e segurança</h2>
+<label class="opcao"><input type="checkbox" name="backup_automatico" value="1" {{ 'checked' if c.backup_automatico }}> Fazer backups automáticos dos projetos ativos (somente quando houver alterações)</label>
+<div class="grade g2"><div><label>Intervalo (horas)</label><input type="number" step="0.5" min="0.5" name="backup_intervalo_horas" value="{{ c.backup_intervalo_horas }}"></div>
+<div><label>Manter apenas os últimos N automáticos</label><input type="number" min="0" name="backup_reter_ultimos" value="{{ c.backup_reter_ultimos }}"><div class="ajuda">0 = manter todos (padrão; nada é apagado).</div></div>
+<div><label>Bloquear o cofre após (minutos sem uso)</label><input type="number" min="1" name="cofre_bloqueio_minutos" value="{{ c.cofre_bloqueio_minutos }}"></div></div>
+<label>Cópia adicional dos backups em (opcional)</label><input type="text" name="backup_pasta" value="{{ c.backup_pasta }}" placeholder="Ex.: E:\  (pendrive) ou D:\OneDrive">
+<div class="ajuda">Os backups contêm o cofre cifrado; sem a senha, os dados identificáveis permanecem ilegíveis.</div>
+<button class="btn" style="margin-top:10px">Salvar</button></form>
+<div class="cartao"><h2>Backup completo</h2><p class="suave">Um arquivo com os backups de todos os projetos (para trocar de computador). A chave da API não é incluída.</p>
+<form method="post" action="{{ url_for('backup_completo') }}">{{ csrf_campo() }}<button class="btn sec">{{ icone('baixar') }}Gerar e baixar backup completo</button></form>
+<h3 style="margin-top:14px">Backups recentes</h3><div class="rolagem" style="max-height:220px"><table class="tabela"><tbody>
+{% for b in backups %}<tr><td>{{ b.nome }}</td><td class="suave">{{ data(b.criado_em) }}</td><td>{{ b.tipo }}</td>
+<td><a href="{{ url_for('backup_baixar', arquivo=b.arquivo) }}">baixar</a></td></tr>{% else %}<tr><td class="suave">Nenhum backup.</td></tr>{% endfor %}</tbody></table></div></div>
+<form method="post" action="{{ url_for('abrir_pacote') }}" enctype="multipart/form-data" class="cartao">{{ csrf_campo() }}
+<h2>Abrir pacote protegido (.atenaseg)</h2><input type="file" name="arquivo" accept=".atenaseg" required>
+<label>Senha de exportação</label><input type="password" name="senha" required><button class="btn sec" style="margin-top:8px">Abrir</button></form>
+<div class="cartao"><h2>Pasta de dados</h2><p class="mono" style="word-break:break-all">{{ pasta_dados }}</p>
+<div class="linha">{% for q, r in [('dados','Dados'),('backups','Backups'),('exportacoes','Exportações'),('logs','Registros de execução')] %}
+<form method="post" action="{{ url_for('abrir_pasta') }}" class="inline">{{ csrf_campo() }}<input type="hidden" name="qual" value="{{ q }}"><button class="btn sec pq">{{ r }}</button></form>{% endfor %}</div>
+<p class="ajuda">Para usar outra pasta, defina a variável de ambiente <code>ATENA_DADOS</code> ou crie um arquivo <code>modo_portatil.txt</code> ao lado do executável.</p></div>
+</div></div>
+{% endblock %}

@@ -1,0 +1,11 @@
+{% extends "base.html" %}{% from "_macros.html" import icone, situacao, vazio with context %}
+{% block titulo %}Anonimização{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><div class="titulo"><h1>Anonimização</h1>
+<p>A anonimização nunca é aplicada sem a sua conferência. Para cada documento, o ATENA detecta possíveis dados pessoais; você aprova, corrige, acrescenta ou rejeita cada item.</p></div></div>
+<div class="cartao">{% if lista %}<table class="tabela"><thead><tr><th>Documento</th><th>Participante</th><th>Situação</th><th>Versão anonimizada</th><th></th></tr></thead><tbody>
+{% for d in lista %}<tr><td><a href="{{ url_for('documento', uid=uid, did=d.id) }}">{{ d.codigo }} — {{ d.titulo }}</a></td><td class="mono">{{ d.participante_codigo or '—' }}</td>
+<td>{{ situacao(d.situacao, d.situacao_rotulo) }}</td><td>{{ ('nº ' ~ d.versao_numero) if d.versao_numero else '—' }}</td>
+<td><a class="btn {{ 'sec' if d.situacao == 'anonimizado' else '' }} pq" href="{{ url_for('anonimizacao', uid=uid, did=d.id) }}">{{ 'Revisar novamente' if d.situacao == 'anonimizado' else ('Continuar revisão' if d.situacao == 'em_anonimizacao' else 'Iniciar revisão') }}</a></td></tr>{% endfor %}</tbody></table>
+{% else %}{{ vazio('Nenhum documento importado.', 'documentos') }}{% endif %}</div>
+{% endblock %}

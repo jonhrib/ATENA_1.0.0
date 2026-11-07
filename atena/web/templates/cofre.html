@@ -1,0 +1,60 @@
+{% extends "base.html" %}{% from "_macros.html" import icone, situacao, csrf_campo, data with context %}
+{% block titulo %}Cofre{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><div class="titulo"><h1>{{ icone('cofre') }} Cofre do projeto</h1>
+<p>Zona protegida: originais, textos ainda não anonimizados e a correspondência entre códigos e identidades. Tudo cifrado com AES-256-GCM;
+a chave é derivada da sua senha (scrypt) e nunca é gravada em texto puro. Enquanto esse mapeamento existir, os dados estão
+<b>pseudonimizados</b> (reidentificáveis com a senha), e não anonimizados de forma irreversível.</p></div></div>
+<div class="grade g2">
+<div>
+{% if not cofre_aberto %}
+<form method="post" class="cartao destaque">{{ csrf_campo() }}<input type="hidden" name="proximo" value="{{ proximo }}">
+<h2>Desbloquear</h2><p class="suave">O cofre é bloqueado automaticamente após {{ minutos }} minutos sem uso.</p>
+<label>Senha do cofre</label><input type="password" name="senha" autofocus required autocomplete="current-password">
+<button class="btn" style="margin-top:10px">{{ icone('cofre-aberto') }}Desbloquear</button></form>
+{% else %}
+<div class="cartao"><h2>Cofre desbloqueado</h2><p>{{ n_ident }} identidade(s) registrada(s).</p>
+<form method="post" action="{{ url_for('cofre_bloquear', uid=uid) }}" class="inline">{{ csrf_campo() }}<button class="btn sec">{{ icone('cofre') }}Bloquear agora</button></form></div>
+<div class="cartao"><h2>Registrar identificador conhecido</h2>
+<p class="suave">Informe nomes, apelidos e outros identificadores que você já sabe que aparecem nas entrevistas. Eles serão procurados em todos os documentos e
+receberão sempre o mesmo código. Separe variantes com “;”.</p>
+<form method="post" action="{{ url_for('cofre_identidade', uid=uid) }}">{{ csrf_campo() }}
+<div class="grade g2"><div><label>Categoria</label><select name="categoria">{% for k, v in categorias.items() if k != 'PARTICIPANTE' %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></div>
+<div><label>Código (opcional)</label><input type="text" name="codigo" placeholder="automático (ex.: PESSOA_004)"></div></div>
+<label>Valor original</label><input type="text" name="valor" required autocomplete="off">
+<label>Variantes</label><input type="text" name="variantes" placeholder="Ex.: Zé; José Carlos" autocomplete="off">
+<button class="btn sec" style="margin-top:8px">Guardar no cofre</button></form>
+<p class="ajuda">Participantes: cadastre o nome real (opcional) na ficha do participante.</p></div>
+{% endif %}
+<form method="post" action="{{ url_for('cofre_mapeamento', uid=uid) }}" class="cartao">{{ csrf_campo() }}
+<h2>Consultar o mapeamento</h2><p class="suave">Exibe as identidades reais. Exige a senha novamente e o motivo; a consulta fica registrada.</p>
+<label>Motivo</label><input type="text" name="motivo" required placeholder="Ex.: conferir participante antes da devolutiva">
+<label>Senha do cofre</label><input type="password" name="senha" required autocomplete="current-password">
+<button class="btn sec" style="margin-top:8px">Exibir mapeamento</button></form>
+</div>
+<div>
+<div class="cartao"><h2>Senha e recuperação</h2>
+{% if not recuperacao_ok %}<div class="aviso alerta">{{ icone('alerta') }}<div>Você ainda não confirmou que guardou o código de recuperação.</div></div>{% endif %}
+<details class="dobra"><summary>Trocar a senha</summary><form method="post" action="{{ url_for('cofre_senha', uid=uid) }}">{{ csrf_campo() }}
+<label>Senha atual</label><input type="password" name="atual" required><label>Nova senha</label><input type="password" name="nova" minlength="8" required>
+<label>Repita</label><input type="password" name="nova2" minlength="8" required><button class="btn sec pq" style="margin-top:8px">Trocar</button></form></details>
+<details class="dobra"><summary>Esqueci a senha (usar código de recuperação)</summary><form method="post" action="{{ url_for('cofre_recuperar', uid=uid) }}">{{ csrf_campo() }}
+<label>Código de recuperação</label><input type="text" name="codigo" required class="mono"><label>Nova senha</label><input type="password" name="nova" minlength="8" required>
+<label>Repita</label><input type="password" name="nova2" minlength="8" required><button class="btn sec pq" style="margin-top:8px">Redefinir</button></form></details>
+<details class="dobra"><summary>Gerar novo código de recuperação</summary><form method="post" action="{{ url_for('cofre_novo_codigo', uid=uid) }}">{{ csrf_campo() }}
+<p class="suave">O código anterior deixará de funcionar.</p><label>Senha do cofre</label><input type="password" name="senha" required>
+<button class="btn sec pq" style="margin-top:8px">Gerar</button></form></details></div>
+<div class="cartao"><h2>Exportação protegida do mapeamento</h2>
+<p class="suave">Gera um arquivo <code>.atenaseg</code> cifrado com uma senha de exportação (diferente da senha do cofre), contendo a correspondência
+códigos → identidades. Use apenas quando necessário (ex.: exigência do comitê de ética). O arquivo pode ser aberto em Configurações › Abrir pacote protegido.</p>
+<form method="post" action="{{ url_for('exportar_protegido', uid=uid) }}">{{ csrf_campo() }}
+<label>Justificativa</label><input type="text" name="justificativa" required>
+<label>Senha do cofre</label><input type="password" name="senha_cofre" required>
+<label>Senha de exportação (mín. 8)</label><input type="password" name="senha_exportacao" minlength="8" required>
+<label class="opcao"><input type="checkbox" name="ciente" value="1" required> Estou ciente de que o arquivo contém dados pessoais identificáveis e me responsabilizo pela sua guarda.</label>
+<button class="btn perigo">Gerar exportação protegida</button></form></div>
+<div class="cartao"><h2>Registro de acessos ao cofre</h2><div class="rolagem" style="max-height:240px"><table class="tabela"><tbody>
+{% for a in acessos %}<tr><td class="suave">{{ data(a.momento) }}</td><td>{{ a.operacao|replace('_',' ') }}</td><td class="suave">{{ a.detalhe }}</td></tr>{% endfor %}
+</tbody></table></div></div>
+</div></div>
+{% endblock %}

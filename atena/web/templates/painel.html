@@ -1,0 +1,41 @@
+{% extends "base.html" %}{% from "_macros.html" import icone, situacao, csrf_campo, data, vazio with context %}
+{% block titulo %}Início{% endblock %}
+{% block conteudo %}
+{% set r = d.resumo %}
+<div class="cabecalho"><div class="titulo"><h1>{{ proj.nome }}</h1><p>{{ proj.pergunta or proj.descricao or '' }}</p></div>
+<a class="btn sec" href="{{ url_for('documentos', uid=uid) }}">{{ icone('documentos') }}Importar entrevista</a>
+<a class="btn" href="{{ url_for('editor_escolha', uid=uid) }}">{{ icone('editor') }}Abrir o editor</a></div>
+
+<div class="grade g4" style="margin-bottom:16px">
+  <a class="numero" href="{{ url_for('participantes', uid=uid) }}"><b>{{ r.participantes }}</b><span>participantes</span></a>
+  <a class="numero" href="{{ url_for('documentos', uid=uid) }}"><b>{{ r.entrevistas }}</b><span>entrevistas importadas · {{ r.documentos }} documentos</span></a>
+  <a class="numero" href="{{ url_for('anonimizacao_lista', uid=uid) }}"><b>{{ r.anonimizados }}</b><span>anonimizados · {{ r.pendentes_anonimizacao }} pendentes de revisão</span></a>
+  <a class="numero" href="{{ url_for('codigos', uid=uid) }}"><b>{{ r.codigos }}</b><span>códigos · {{ r.fragmentos }} fragmentos</span></a>
+  <a class="numero" href="{{ url_for('mapa', uid=uid) }}"><b>{{ r.temas_construcao }}</b><span>temas em construção</span></a>
+  <a class="numero" href="{{ url_for('revisao', uid=uid) }}"><b>{{ r.temas_revisados }}</b><span>temas revisados</span></a>
+  <a class="numero" href="{{ url_for('definicao', uid=uid) }}"><b>{{ r.temas_definidos }}</b><span>temas definidos</span></a>
+  <a class="numero" href="{{ url_for('ia_painel', uid=uid) }}"><b>{{ r.sugestoes_pendentes }}</b><span>sugestões de IA pendentes</span></a>
+</div>
+
+<div class="cartao"><div class="linha"><h2 class="flex1" style="margin:0">Fases da análise temática</h2><a href="{{ url_for('analise', uid=uid) }}">Ver detalhes ›</a></div>
+<p class="suave" style="margin:4px 0 10px">A conclusão de cada fase é registrada por você. Os números são apenas apoio descritivo — a análise temática é recursiva e as fases podem ser reabertas.</p>
+<div class="fases">{% for f in d.fases %}
+<a class="fase {{ f.situacao }}" href="{{ url_for(f.rota, uid=uid) }}"><div class="n">FASE {{ f.numero }}</div><div class="nome">{{ f.nome }}</div>{{ situacao(f.situacao, f.situacao_rotulo) }}</a>
+{% endfor %}</div></div>
+
+<div class="grade g2">
+<div class="cartao"><h2>Pendências e alertas</h2>
+{% for x in d.pendencias %}
+  <div class="aviso {{ {'erro':'erro','alerta':'alerta'}.get(x.nivel, 'info') }}">{{ icone({'erro':'erro','alerta':'alerta'}.get(x.nivel, 'info')) }}
+  <div class="flex1">{{ x.texto }}</div><a class="btn sec pq" href="{{ url_for(x.rota, **x.args) }}">Resolver</a></div>
+{% else %}{{ vazio('Nenhuma pendência no momento.', 'ok') }}{% endfor %}
+</div>
+<div class="cartao"><div class="linha"><h2 class="flex1" style="margin:0">Últimas atividades</h2><a href="{{ url_for('historico', uid=uid) }}">Histórico completo ›</a></div>
+<table class="tabela" style="margin-top:8px"><tbody>
+{% for h in d.atividades %}<tr><td class="suave" style="white-space:nowrap">{{ data(h.momento) }}</td><td>{{ h.entidade_rotulo }}</td>
+<td>{{ h.operacao|replace('_',' ') }}</td><td>{{ situacao(h.origem) }}</td></tr>
+{% else %}<tr><td>{{ vazio('Nenhuma atividade ainda.') }}</td></tr>{% endfor %}</tbody></table>
+<p class="suave" style="margin-top:10px;font-size:.85rem">Último backup: {{ data(d.ultimo_backup.criado_em) if d.ultimo_backup else 'nenhum' }} ·
+<a href="{{ url_for('backup_projeto', uid=uid) }}">fazer backup agora</a></p></div>
+</div>
+{% endblock %}

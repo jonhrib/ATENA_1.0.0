@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block titulo %}Códigos × entrevistas{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><div class="titulo"><div class="migalhas"><a href="{{ url_for('codigos', uid=uid) }}">Códigos</a> ›</div><h1>Utilização dos códigos entre entrevistas</h1>
+<p>Número de fragmentos de cada código por entrevista (descritivo). Clique numa célula para ver os fragmentos.</p></div></div>
+<div class="cartao rolagem" style="max-height:none"><table class="tabela calor"><thead><tr><th>Código</th>{% for d in m.documentos %}<th class="num">{{ d.participante or d.codigo }}<br><small>{{ d.codigo }}</small></th>{% endfor %}</tr></thead><tbody>
+{% for c in m.codigos %}<tr><td><a href="{{ url_for('codigo', uid=uid, cid=c.id) }}">{{ c.nome }}</a></td>{% for d in m.documentos %}{% set n = m.celulas.get(c.id ~ ':' ~ d.id, 0) %}
+<td class="c">{% if n %}<a href="{{ url_for('consulta_fragmentos', uid=uid, codigo=c.id, documento=d.id) }}" style="background:rgba(15,92,99,{{ 0.12 + 0.6 * n / ([m.celulas.values()|max, 1]|max) }})">{{ n }}</a>{% else %}<span class="suave">·</span>{% endif %}</td>{% endfor %}</tr>{% endfor %}</tbody></table></div>
+{% endblock %}

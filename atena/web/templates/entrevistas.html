@@ -1,0 +1,27 @@
+{% extends "base.html" %}{% from "_macros.html" import icone, situacao, csrf_campo, data, vazio with context %}
+{% block titulo %}Entrevistas · Familiarização{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><div class="titulo"><div class="migalhas">Fase 1 — {{ fase.nome }} · {{ situacao(fase.situacao, fase.situacao_rotulo) }}</div>
+<h1>Entrevistas</h1><p>Leia integralmente cada transcrição, mais de uma vez, registrando impressões, ideias iniciais e padrões percebidos.
+A fase só é considerada concluída quando você a registrar como concluída em <a href="{{ url_for('analise', uid=uid) }}">Análise temática</a>.</p></div></div>
+<div class="grade g-lado">
+<div class="cartao"><h2>Corpus</h2>
+<table class="tabela"><thead><tr><th>Documento</th><th>Participante</th><th>Situação</th><th class="num">Leituras integrais</th><th class="num">Fragmentos</th><th></th></tr></thead><tbody>
+{% for d in lista %}<tr><td>{{ d.codigo }} — {{ d.titulo }}</td><td class="mono">{{ d.participante_codigo or '—' }}</td><td>{{ situacao(d.situacao, d.situacao_rotulo) }}</td>
+<td class="num">{{ leituras|selectattr('documento_id','equalto',d.id)|selectattr('tipo','equalto','leitura_integral')|list|length }}</td><td class="num">{{ d.n_fragmentos }}</td>
+<td style="white-space:nowrap">{% if d.versao_numero %}<a class="btn pq" href="{{ url_for('editor', uid=uid, did=d.id, modo='leitura') }}">{{ icone('entrevistas') }}Ler</a>
+<a class="btn sec pq" href="{{ url_for('editor', uid=uid, did=d.id, modo='codificar') }}">Codificar</a>{% else %}<a class="btn sec pq" href="{{ url_for('anonimizacao', uid=uid, did=d.id) }}">Anonimizar primeiro</a>{% endif %}</td></tr>
+{% else %}<tr><td colspan="6">{{ vazio('Nenhuma entrevista ainda.') }}</td></tr>{% endfor %}</tbody></table>
+<h3 style="margin-top:16px">Registro de leituras</h3>
+<div class="rolagem" style="max-height:220px"><table class="tabela"><tbody>{% for l in leituras if l.tipo == 'leitura_integral' %}<tr><td class="suave">{{ data(l.criado_em) }}</td><td>{{ l.codigo }}</td><td class="suave">{{ l.observacao }}</td></tr>
+{% else %}<tr><td class="suave">Nenhuma leitura integral registrada.</td></tr>{% endfor %}</tbody></table></div></div>
+<div><form method="post" action="{{ url_for('notas_view', uid=uid) }}" class="cartao destaque">{{ csrf_campo() }}<h2>{{ icone('notas') }} Diário de familiarização</h2>
+<input type="hidden" name="fase" value="1"><label>Tipo</label><select name="tipo">{% for k in ['familiarizacao','ideia','padrao','reflexividade'] %}<option value="{{ k }}">{{ tipos_nota[k] }}</option>{% endfor %}</select>
+<label>Entrevista (opcional)</label><select name="documento_id"><option value="">— corpus todo —</option>{% for d in lista if d.versao_numero %}<option value="{{ d.id }}">{{ d.codigo }}</option>{% endfor %}</select>
+<label>Título</label><input type="text" name="titulo"><label>Registro</label><textarea name="texto" rows="5" required></textarea>
+<button class="btn" style="margin-top:8px">Registrar</button></form>
+<div class="cartao"><div class="linha"><h3 class="flex1" style="margin:0">Registros recentes</h3><a href="{{ url_for('notas_view', uid=uid, fase=1) }}">ver todos ›</a></div>
+{% for n in notas %}<div class="fragmento"><div class="meta">{{ situacao('roxo', n.tipo_rotulo) }} {{ data(n.criado_em) }} {% if n.documento_codigo %}· {{ n.documento_codigo }}{% endif %}</div>
+{% if n.titulo %}<b>{{ n.titulo }}</b><br>{% endif %}<span class="texto-quebra">{{ n.texto }}</span></div>{% else %}<p class="suave">Nenhum registro ainda.</p>{% endfor %}</div></div>
+</div>
+{% endblock %}

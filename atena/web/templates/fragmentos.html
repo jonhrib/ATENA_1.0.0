@@ -1,0 +1,17 @@
+{% extends "base.html" %}{% from "_macros.html" import icone, situacao, chip_codigo, citacao with context %}
+{% block titulo %}Consulta de fragmentos{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><div class="titulo"><h1>Consulta de fragmentos</h1><p>Os dados de origem de qualquer contagem ou visualização. {{ lista|length }} fragmento(s).</p></div></div>
+<form class="cartao compacto linha" method="get">
+<select name="codigo"><option value="">todos os códigos</option>{% for c in codigos %}<option value="{{ c.id }}" {{ 'selected' if filtros.codigo == c.id|string }}>{{ c.nome }}</option>{% endfor %}</select>
+<select name="tema"><option value="">todos os temas</option>{% for t in temas %}<option value="{{ t.id }}" {{ 'selected' if filtros.tema == t.id|string }}>{{ t.nome }}</option>{% endfor %}</select>
+<select name="documento"><option value="">todos os documentos</option>{% for d in documentos %}<option value="{{ d.id }}" {{ 'selected' if filtros.documento == d.id|string }}>{{ d.codigo }}</option>{% endfor %}</select>
+<select name="participante"><option value="">todos os participantes</option>{% for p in participantes %}<option value="{{ p.id }}" {{ 'selected' if filtros.participante == p.id|string }}>{{ p.codigo }}</option>{% endfor %}</select>
+<input type="search" name="q" value="{{ filtros.q or '' }}" placeholder="texto contém…" style="max-width:220px">
+<label class="opcao" style="margin:0"><input type="checkbox" name="relevante" value="1" {{ 'checked' if filtros.relevante }}> só relevantes</label><button class="btn sec">Filtrar</button></form>
+{% for f in lista %}<div class="fragmento"><div class="meta"><b>{{ f.participante_codigo or 'sem participante' }}</b> · {{ f.documento_codigo }} · nº {{ f.id }}
+{% if f.relevante %}<span class="etiqueta alerta">relevante</span>{% endif %}{% if f.situacao != 'ok' %}{{ situacao(f.situacao) }}{% endif %}
+<a href="{{ url_for('editor', uid=uid, did=f.documento_id) }}#frag-{{ f.id }}">abrir no contexto</a></div>
+<div class="texto">{{ f.texto }}</div><div>{% for c in f.codigos %}{{ chip_codigo(c, uid) }}{% endfor %}</div></div>
+{% else %}<div class="cartao"><div class="vazio">Nenhum fragmento com esses filtros.</div></div>{% endfor %}
+{% endblock %}

@@ -1,0 +1,36 @@
+{% macro icone(n, cls="") %}<svg class="ic {{ cls }}" aria-hidden="true"><use href="{{ url_for('static', filename='icones.svg') }}#{{ n }}"/></svg>{% endmacro %}
+
+{% macro csrf_campo() %}<input type="hidden" name="_csrf" value="{{ csrf }}">{% endmacro %}
+
+{% macro situacao(s, rotulo=None) -%}
+{%- set mapa = {'anonimizado':'ok','importado':'alerta','em_anonimizacao':'info','definido':'ok','revisado':'petroleo','em_revisao':'info',
+  'candidato':'roxo','descartado':'','fundido':'','concluida':'ok','em_andamento':'roxo','nao_iniciada':'','ativo':'ok','arquivado':'',
+  'excluido':'erro','mesclado':'','ok':'ok','realocado':'alerta','inconsistente':'erro','pendente':'alerta','aceita':'ok','editada':'ok',
+  'rejeitada':'','respondida':'ok','preparada':'alerta','erro':'erro','cancelada':'','enviada':'info','aprovado':'ok','rascunho':'alerta',
+  'anonimizar':'erro','manter':'info','rejeitar':'','pesquisador':'petroleo','ia':'roxo','sistema':''} -%}
+<span class="etiqueta {{ mapa.get(s, '') }}">{{ rotulo or s|replace('_',' ') }}</span>
+{%- endmacro %}
+
+{% macro chip_codigo(c, uid, remover=None) -%}
+<a class="chip" href="{{ url_for('codigo', uid=uid, cid=c.id) }}" title="{{ c.descricao or '' }}"><i style="background:{{ c.cor or '#5b3fa0' }}"></i>{{ c.nome }}</a>
+{%- endmacro %}
+
+{% macro citacao(f, uid, mostrar_link=True) -%}
+<div class="citacao-bloco">{{ f.texto }}
+<footer>{{ f.participante_codigo or '(sem participante)' }} · {{ f.documento_codigo }} · fragmento nº {{ f.id }}
+{% if f.situacao and f.situacao != 'ok' %} · {{ situacao(f.situacao) }}{% endif %}
+{% if mostrar_link %} · <a href="{{ url_for('editor', uid=uid, did=f.documento_id) }}#frag-{{ f.id }}">ver no contexto</a>{% endif %}</footer></div>
+{%- endmacro %}
+
+{% macro vazio(texto, icone_nome="info") -%}
+<div class="vazio">{{ icone(icone_nome) }}{{ texto }}</div>
+{%- endmacro %}
+
+{% macro confirmar(acao, rotulo, mensagem, campos={}, classe="btn perigo pq", justificativa=True, placeholder="Justificativa (obrigatória)") -%}
+<form class="inline form-confirmar" method="post" action="{{ acao }}" data-confirmar="{{ mensagem }}" data-justificativa="{{ '1' if justificativa else '' }}" data-placeholder="{{ placeholder }}">
+{{ csrf_campo() }}{% for k, v in campos.items() %}<input type="hidden" name="{{ k }}" value="{{ v }}">{% endfor %}
+{% if justificativa %}<input type="hidden" name="justificativa" value="">{% endif %}
+<button class="{{ classe }}" type="submit">{{ rotulo }}</button></form>
+{%- endmacro %}
+
+{% macro data(iso) -%}{{ (iso or '')[:16]|replace('T', ' ') }}{%- endmacro %}

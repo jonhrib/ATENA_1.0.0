@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+.venv-build/
+build/
+dist/
+atena.env
+# Dados de pesquisa nunca devem ir para o repositório:
+ATENA_dados/
+*.atenabak
+*.atenaseg

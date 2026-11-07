@@ -1,0 +1,25 @@
+{% extends "base.html" %}{% from "_macros.html" import icone, situacao, csrf_campo, vazio with context %}
+{% block titulo %}Participantes{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><div class="titulo"><h1>Participantes</h1>
+<p>Cada participante recebe um identificador exclusivo (PARTICIPANTE_001, 002…). Registre apenas metadados não identificáveis; o nome real é opcional e fica somente no cofre.</p></div>
+<button class="btn" type="button" data-abrir="dlg-part">{{ icone('mais') }}Novo participante</button></div>
+<div class="cartao">
+{% if lista %}<table class="tabela"><thead><tr><th>Código</th><th>Metadados</th><th>Situação</th><th class="num">Documentos</th><th class="num">Fragmentos</th><th></th></tr></thead><tbody>
+{% for pa in lista %}<tr class="{{ 'suave' if not pa.ativo }}"><td class="mono"><a href="{{ url_for('participante', uid=uid, pid=pa.id) }}">{{ pa.codigo }}</a>{% if not pa.ativo %} <span class="etiqueta">inativo</span>{% endif %}</td>
+<td>{% for k, v in pa.metadados_obj.items() %}<span class="chip">{{ k }}: {{ v }}</span>{% endfor %}</td>
+<td>{{ situacao(pa.situacao, pa.situacao_rotulo) }}</td><td class="num">{{ pa.n_documentos }}</td><td class="num">{{ pa.n_fragmentos }}</td>
+<td><a class="btn sec pq" href="{{ url_for('participante', uid=uid, pid=pa.id) }}">Abrir</a></td></tr>{% endfor %}</tbody></table>
+{% else %}{{ vazio('Nenhum participante cadastrado.', 'participantes') }}{% endif %}</div>
+<dialog id="dlg-part"><form method="post">{{ csrf_campo() }}
+<div class="cab"><h3>Novo participante</h3></div><div class="corpo">
+<p class="suave">O código será gerado automaticamente.</p>
+<div id="metas">{% for c in campos %}<div class="linha"><input type="text" name="meta_chave" value="{{ c }}" style="max-width:220px"><input type="text" name="meta_valor" class="flex1" placeholder="(não identificável)"></div>{% endfor %}</div>
+<button type="button" class="btn-link" data-add-meta="metas">+ outro campo</button>
+<label>Situação da entrevista</label><select name="situacao">{% for k, v in situacoes.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select>
+<label>Observações (sem dados pessoais)</label><textarea name="observacoes" rows="2"></textarea>
+<fieldset><legend>{{ icone('cofre') }} Identidade (opcional, cifrada no cofre)</legend>
+<label>Nome real</label><input type="text" name="nome_real" autocomplete="off"><label>Variantes (separe com “;”)</label><input type="text" name="variantes" placeholder="Ex.: apelido; primeiro nome" autocomplete="off">
+<div class="ajuda">Ajuda a detectar o nome em todos os documentos e garante o mesmo código. Exige o cofre desbloqueado.</div></fieldset>
+</div><div class="pe"><button type="button" class="btn sec" data-fechar>Cancelar</button><button class="btn">Criar</button></div></form></dialog>
+{% endblock %}

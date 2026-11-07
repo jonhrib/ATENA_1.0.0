@@ -1,0 +1,19 @@
+# Termos gerais do ensino superior e do Movimento Empresa Júnior.
+MEJ
+TCC
+ENEM
+SISU
+Sisu
+PROUNI
+ProUni
+FIES
+Fies
+MEC
+CAPES
+CNPq
+Ciência da Computação
+Engenharia da Computação
+Engenharia de Software
+Sistemas de Informação
+Análise e Desenvolvimento de Sistemas
+Tecnologia da Informação

@@ -1,0 +1,21 @@
+{% extends "base.html" %}{% from "_macros.html" import icone, csrf_campo with context %}
+{% block titulo %}Código de recuperação{% endblock %}
+{% block conteudo %}
+<div class="cartao destaque" style="max-width:760px">
+<h1>{{ icone('cofre') }} Código de recuperação do cofre</h1>
+{% if codigo %}
+<p>Este código permite redefinir a senha do cofre caso você a esqueça. <b>Ele é exibido apenas agora.</b>
+Anote-o em papel ou guarde-o num gerenciador de senhas, fora desta pasta de projeto.</p>
+<div class="codigo-recuperacao" id="codigo">{{ codigo }}</div>
+<div class="linha" style="margin:10px 0"><button class="btn sec pq" type="button" data-copiar="#codigo">Copiar</button></div>
+{% else %}
+<p>O código de recuperação já foi exibido anteriormente e não pode ser mostrado de novo. Se você não o guardou,
+gere um novo código na tela do cofre (exige a senha atual).</p>
+{% endif %}
+<div class="aviso alerta">{{ icone('alerta') }}<div>Se você perder a senha <b>e</b> o código de recuperação, o mapeamento de identidades e os originais
+ficarão permanentemente ilegíveis. Os dados anonimizados e a análise continuam acessíveis.</div></div>
+<form method="post" action="{{ url_for('recuperacao_confirmar', uid=uid) }}">{{ csrf_campo() }}
+<label class="opcao"><input type="checkbox" name="confirmo" value="1" required> Guardei o código de recuperação em local seguro.</label>
+<div class="linha" style="margin-top:10px"><button class="btn">Continuar para o projeto</button>
+<a class="btn sec" href="{{ url_for('cofre', uid=uid) }}">Ir para o cofre</a></div></form></div>
+{% endblock %}

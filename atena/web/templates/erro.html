@@ -1,0 +1,3 @@
+{% extends "base.html" %}{% block titulo %}{{ titulo }}{% endblock %}
+{% block conteudo %}<div class="cartao" style="max-width:720px"><h1>{{ titulo }}</h1><p>{{ mensagem }}</p>
+<a class="btn sec" href="{{ url_for('inicio') }}">Voltar ao início</a></div>{% endblock %}

@@ -1,0 +1,27 @@
+{% from "_macros.html" import situacao, csrf_campo with context %}
+{% set cobj = s.conteudo_obj %}
+<div class="fragmento" id="sug-{{ s.id }}"><div class="meta">{{ situacao('ia', 'sugestão de IA') }} <b>{{ {'codigo':'Código','agrupamento':'Agrupamento em tema','relacao':'Relação entre códigos','nome_tema':'Nome de tema','sintese':'Síntese preliminar','coerencia':'Coerência','comparacao':'Comparação de temas','organizacao':'Organização de evidências','privacidade':'Possível dado pessoal','revisao_texto':'Revisão de texto'}.get(s.tipo, s.tipo) }}</b>
+· nº {{ s.id }} · envio <a href="{{ url_for('ia_interacao', uid=uid, iid=s.interacao_id) }}">#{{ s.interacao_id }}</a> {{ situacao(s.situacao) }}</div>
+{% for a in s.alertas_obj %}<div class="aviso alerta" style="font-size:.84rem;padding:6px 10px"><div>{{ a }}</div></div>{% endfor %}
+{% if s.tipo == 'codigo' %}<div><b>{{ cobj.nome }}</b>{% if cobj.codigo_existente_id %} <span class="etiqueta">usar código existente #{{ cobj.codigo_existente_id }}</span>{% endif %}</div>
+<div class="suave">{{ cobj.descricao }}</div><div style="font-size:.86rem"><i>{{ cobj.justificativa }}</i></div>
+{% for e in cobj.evidencias %}<div class="citacao-bloco" style="font-size:.9rem">{{ e.citacao }}<footer>{{ e.participante }} · {{ e.passagem }}</footer></div>{% endfor %}
+{% elif s.tipo == 'agrupamento' %}<div><b>{{ cobj.tema }}</b></div><div class="suave">{{ cobj.descricao }}</div>
+<div>{% for cid in cobj.codigos %}<span class="chip">{{ codigos_nomes[cid] if codigos_nomes is defined and cid in codigos_nomes else ('código #' ~ cid) }}</span>{% endfor %}</div><div style="font-size:.86rem"><i>{{ cobj.justificativa }}</i></div>
+{% elif s.tipo == 'relacao' %}<div>Código #{{ cobj.codigo_a }} ↔ código #{{ cobj.codigo_b }}: <b>{{ cobj.relacao }}</b></div><div class="suave">{{ cobj.justificativa }}</div>
+{% elif s.tipo == 'nome_tema' %}<div><b>{{ cobj.nome }}</b></div><div class="suave">{{ cobj.justificativa }}</div>
+{% elif s.tipo == 'sintese' %}<div class="json-claro" style="font-family:var(--fonte-leitura);font-size:.92rem">{{ cobj.texto }}</div>
+{% elif s.tipo == 'privacidade' %}<div>Trecho: <b>{{ cobj.trecho }}</b></div><div class="suave">{{ cobj.motivo }}</div>
+{% if cobj.documento_id %}<a href="{{ url_for('editor', uid=uid, did=cobj.documento_id, modo='editar') }}">corrigir no editor</a>{% endif %}
+{% elif s.tipo == 'revisao_texto' %}<details><summary>Ver texto revisado</summary><div class="json-claro">{{ cobj.texto }}</div></details><ul>{% for c in cobj.comentarios %}<li>{{ c }}</li>{% endfor %}</ul>
+{% else %}<div class="json-claro">{{ cobj.resposta|tojson(indent=1) }}</div>{% endif %}
+{% if s.situacao == 'pendente' %}
+<form method="post" action="{{ url_for('ia_decidir', uid=uid, sid=s.id) }}" style="margin-top:6px">{{ csrf_campo() }}
+{% if s.tipo in ('codigo', 'agrupamento', 'nome_tema', 'sintese') %}<details class="dobra"><summary>Editar antes de aceitar</summary>
+{% if s.tipo == 'codigo' %}<label>Nome</label><input type="text" name="nome" value="{{ cobj.nome }}"><label>Descrição</label><textarea name="descricao" rows="2">{{ cobj.descricao }}</textarea><label>Justificativa</label><textarea name="justificativa" rows="2">{{ cobj.justificativa }}</textarea>
+{% elif s.tipo == 'agrupamento' %}<label>Nome do tema</label><input type="text" name="tema" value="{{ cobj.tema }}"><label>Descrição</label><textarea name="descricao" rows="2">{{ cobj.descricao }}</textarea>
+{% elif s.tipo == 'nome_tema' %}<label>Nome</label><input type="text" name="nome" value="{{ cobj.nome }}">
+{% else %}<label>Texto</label><textarea name="texto" rows="8">{{ cobj.texto }}</textarea>{% endif %}
+<button class="btn pq" name="decisao" value="editada" style="margin-top:6px">Aceitar com estas edições</button></details>{% endif %}
+<div class="linha"><input type="text" name="observacao" placeholder="Observação sobre a decisão (opcional)" class="flex1">
+<button class="btn pq" name="decisao" value="aceita">Aceitar</button><button class="btn sec pq" name="decisao" value="rejeitada">Rejeitar</button></div></form>{% endif %}</div>

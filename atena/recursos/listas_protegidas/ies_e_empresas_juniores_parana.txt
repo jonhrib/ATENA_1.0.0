@@ -1,0 +1,58 @@
+# Instituições de ensino superior e Empresas Juniores do Paraná.
+# Lista herdada do sistema anterior (dados/entidades_preservar.txt).
+# Termos protegidos NUNCA são substituídos na anonimização.
+Universidade Estadual de Londrina
+UEL
+Universidade Estadual de Maringá
+UEM
+Universidade Estadual de Ponta Grossa
+UEPG
+Universidade Estadual do Oeste do Paraná
+UNIOESTE
+Unioeste
+Universidade Estadual do Centro-Oeste
+UNICENTRO
+Unicentro
+Universidade Estadual do Norte do Paraná
+UENP
+Universidade Estadual do Paraná
+UNESPAR
+Unespar
+Universidade Federal do Paraná
+UFPR
+Universidade Tecnológica Federal do Paraná
+UTFPR
+Universidade Federal da Integração Latino-Americana
+UNILA
+Unila
+Universidade Federal da Fronteira Sul
+UFFS
+Instituto Federal do Paraná
+IFPR
+Instituto Federal de Educação, Ciência e Tecnologia do Paraná
+Haken
+Haken - Empresa Júnior de Ciência da Computação
+Ecomp
+Unect Jr.
+Unect
+OCCAM Engenharia
+OCCAM
+Forcetech Jr. Soluções
+Forcetech Jr.
+Forcetech
+Therion
+Pegasus Soluções Tecnológicas
+Pegasus
+Hï Tech
+Hi Tech
+Hï Tech Jr.
+Main - Empresa Júnior de Ciência da Computação e Engenharia de Software da UEM
+FEJEPAR
+Fejepar
+NEJO
+Paraná Júnior
+Brasil Júnior
+Movimento Empresa Júnior
+Empresa Júnior
+Empresas Juniores
+SEBRAE

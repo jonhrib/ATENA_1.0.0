@@ -1,0 +1,12 @@
+{% extends "base.html" %}{% from "_macros.html" import icone, csrf_campo, data with context %}
+{% block titulo %}Mapeamento de identidades{% endblock %}
+{% block conteudo %}
+<div class="aviso erro">{{ icone('alerta') }}<div><b>Dados pessoais identificáveis.</b> Não fotografe nem copie esta tela para documentos da pesquisa. Esta consulta foi registrada no histórico.</div></div>
+<div class="cabecalho"><div class="titulo"><h1>Mapeamento de identidades</h1></div><a class="btn sec" href="{{ url_for('cofre', uid=uid) }}">Fechar</a></div>
+<div class="cartao"><table class="tabela"><thead><tr><th>Código</th><th>Categoria</th><th>Valor original</th><th>Variantes</th><th>Editar</th></tr></thead><tbody>
+{% for i in identidades %}<tr><td class="mono">{{ i.codigo }}</td><td>{{ categorias.get(i.categoria, i.categoria) }}</td><td>{{ i.valor }}</td><td>{{ i.variantes|join('; ') }}</td>
+<td><details><summary class="btn-link">editar</summary><form method="post" action="{{ url_for('cofre_identidade', uid=uid) }}">{{ csrf_campo() }}
+<input type="hidden" name="codigo_existente" value="{{ i.codigo }}"><input type="text" name="valor" value="{{ i.valor }}">
+<input type="text" name="variantes" value="{{ i.variantes|join('; ') }}" style="margin-top:4px"><button class="btn sec pq" style="margin-top:4px">Salvar</button></form></details></td></tr>
+{% else %}<tr><td colspan="5" class="suave">Nenhuma identidade registrada.</td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends "base.html" %}{% from "_macros.html" import icone, situacao, csrf_campo, data, confirmar with context %}
+{% block titulo %}Histórico{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><div class="titulo"><h1>Histórico e auditoria</h1>
+<p>Registro append-only de todas as operações: nenhuma linha pode ser alterada ou apagada, e cada registro guarda o hash do anterior.
+{% if cadeia.integra %}<span class="etiqueta ok">cadeia íntegra · {{ cadeia.registros }} registros</span>{% else %}<span class="etiqueta erro">cadeia quebrada no registro {{ cadeia.quebra_em }}</span>{% endif %}</p></div>
+<a class="btn sec" href="{{ url_for('visualizacoes', uid=uid, aba='linha_tempo') }}">Linha do tempo</a></div>
+<form class="cartao compacto linha" method="get">
+<input type="search" name="q" value="{{ filtros.q or '' }}" placeholder="buscar em operações, justificativas e valores…" class="flex1">
+<select name="entidade" style="max-width:200px"><option value="">todas as entidades</option>{% for k, v in entidades.items() %}<option value="{{ k }}" {{ 'selected' if filtros.entidade == k }}>{{ v }}</option>{% endfor %}</select>
+<select name="operacao" style="max-width:200px"><option value="">todas as operações</option>{% for o in operacoes %}<option value="{{ o }}" {{ 'selected' if filtros.operacao == o }}>{{ o|replace('_',' ') }}</option>{% endfor %}</select>
+<select name="origem" style="max-width:150px"><option value="">toda origem</option>{% for o in ['pesquisador','ia','sistema'] %}<option value="{{ o }}" {{ 'selected' if filtros.origem == o }}>{{ o }}</option>{% endfor %}</select>
+<input type="date" name="desde" value="{{ filtros.desde or '' }}" style="max-width:150px"><input type="date" name="ate" value="{{ filtros.ate or '' }}" style="max-width:150px">
+<button class="btn sec">Filtrar</button></form>
+<div class="cartao"><p class="suave">{{ total }} registro(s){% if total > 100 %} · página {{ pagina }}{% endif %}</p>
+<table class="tabela"><thead><tr><th>#</th><th>Data e hora</th><th>Entidade</th><th>Operação</th><th>Origem</th><th>Justificativa / observação</th><th></th></tr></thead><tbody>
+{% for h in regs %}<tr><td class="suave mono">{{ h.id }}</td><td style="white-space:nowrap">{{ data(h.momento) }}</td><td>{{ h.entidade_rotulo }}{% if h.entidade_id %} <span class="suave mono">#{{ h.entidade_id }}</span>{% endif %}{% if h.fase %}<br><small class="suave">fase {{ h.fase }}</small>{% endif %}</td>
+<td>{{ h.operacao|replace('_',' ') }}</td><td>{{ situacao(h.origem) }}</td><td class="suave"><div class="trecho-curto">{{ h.justificativa }}</div></td>
+<td style="white-space:nowrap">{% if h.antes or h.depois %}<details><summary class="btn-link">antes/depois</summary><div class="grade g2" style="min-width:560px;margin-top:6px">
+<div><small class="suave">Antes</small><div class="json-claro">{{ h.antes_obj|tojson(indent=1) if h.antes_obj is not none else '—' }}</div></div>
+<div><small class="suave">Depois</small><div class="json-claro">{{ h.depois_obj|tojson(indent=1) if h.depois_obj is not none else '—' }}</div></div></div>
+<div class="suave mono" style="font-size:.72rem">hash {{ h.hash[:20] }}… · anterior {{ h.hash_anterior[:12] }}…</div></details>{% endif %}
+{% if h.restauravel %}{{ confirmar(url_for('historico_restaurar', uid=uid, hid=h.id), 'restaurar', h.restauravel ~ '? A restauração será registrada como nova operação.', {}, 'btn sec pq') }}{% endif %}</td></tr>{% endfor %}</tbody></table>
+<div class="linha" style="margin-top:10px">{% if pagina > 1 %}<a class="btn sec pq" href="{{ url_for('historico', uid=uid, pagina=pagina-1, **filtros.to_dict()|reject_pagina) }}">‹ anterior</a>{% endif %}
+{% if pagina * 100 < total %}<a class="btn sec pq" href="{{ url_for('historico', uid=uid, pagina=pagina+1, **filtros.to_dict()|reject_pagina) }}">próxima ›</a>{% endif %}</div></div>
+{% endblock %}

@@ -1,0 +1,20 @@
+{% extends "base.html" %}{% from "_macros.html" import icone, situacao, csrf_campo, vazio with context %}
+{% block titulo %}Códigos{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><div class="titulo"><div class="migalhas">Fase 2 — {{ fase.nome }} · {{ situacao(fase.situacao, fase.situacao_rotulo) }}</div><h1>Livro de códigos</h1>
+<p>Códigos são criados selecionando trechos no <a href="{{ url_for('editor_escolha', uid=uid) }}">editor</a> ou aqui. Contagens são descritivas e não indicam relevância.</p></div>
+<a class="btn sec" href="{{ url_for('codigos_matriz', uid=uid) }}">Comparar entre entrevistas</a>
+<button class="btn" type="button" data-abrir="dlg-novo">{{ icone('mais') }}Novo código</button></div>
+{% if pendentes_ia %}<div class="aviso info">{{ icone('ia') }}<div class="flex1">{{ pendentes_ia|length }} sugestão(ões) de código da IA aguardam sua decisão.</div><a class="btn sec pq" href="{{ url_for('ia_painel', uid=uid) }}">Revisar</a></div>{% endif %}
+<div class="cartao"><div class="linha"><nav class="abas flex1" style="margin:0;border:0">{% for k, r in [('ativo','Ativos'),('excluido','Excluídos'),('mesclado','Mesclados'),('todos','Todos')] %}
+<a href="{{ url_for('codigos', uid=uid, situacao=k) }}" class="{{ 'ativa' if situacao == k }}">{{ r }}</a>{% endfor %}</nav>
+<input type="search" placeholder="Filtrar…" data-filtrar="#tab-cod" style="max-width:260px"></div>
+{% if lista %}<table class="tabela" id="tab-cod"><thead><tr><th>Código</th><th>Descrição</th><th class="num">Fragmentos</th><th class="num">Entrevistas</th><th class="num">Participantes</th><th>Temas</th><th>Origem</th></tr></thead><tbody>
+{% for c in lista %}<tr data-texto="{{ c.nome }} {{ c.descricao }}"><td><a class="chip" href="{{ url_for('codigo', uid=uid, cid=c.id) }}"><i style="background:{{ c.cor }}"></i>{{ c.nome }}</a>{% if c.situacao != 'ativo' %}{{ situacao(c.situacao) }}{% endif %}</td>
+<td class="suave"><div class="trecho-curto">{{ c.descricao }}</div></td><td class="num">{{ c.n_fragmentos }}</td><td class="num">{{ c.n_documentos }}</td><td class="num">{{ c.n_participantes }}</td>
+<td>{% for t in c.temas %}<a class="etiqueta petroleo" href="{{ url_for('tema', uid=uid, tid=t.id) }}">{{ t.nome }}</a> {% else %}<span class="suave">—</span>{% endfor %}</td><td>{{ situacao('ia' if c.origem == 'ia' else 'pesquisador', 'IA (aprovada)' if c.origem == 'ia' else 'manual') }}</td></tr>{% endfor %}</tbody></table>
+{% else %}{{ vazio('Nenhum código. Abra uma entrevista no editor e selecione um trecho para começar a codificar.', 'codigos') }}{% endif %}</div>
+<dialog id="dlg-novo"><form method="post">{{ csrf_campo() }}<div class="cab"><h3>Novo código</h3></div><div class="corpo">
+<label>Nome</label><input type="text" name="nome" required><label>Descrição</label><textarea name="descricao" rows="3"></textarea><label>Justificativa</label><textarea name="justificativa" rows="2"></textarea></div>
+<div class="pe"><button type="button" class="btn sec" data-fechar>Cancelar</button><button class="btn">Criar</button></div></form></dialog>
+{% endblock %}

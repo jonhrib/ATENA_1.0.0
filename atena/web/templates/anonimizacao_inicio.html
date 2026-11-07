@@ -1,0 +1,17 @@
+{% extends "base.html" %}{% from "_macros.html" import icone, situacao, csrf_campo, data with context %}
+{% block titulo %}Anonimização · {{ d.codigo }}{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><div class="titulo"><div class="migalhas"><a href="{{ url_for('anonimizacao_lista', uid=uid) }}">Anonimização</a> ›</div>
+<h1>{{ d.codigo }} — {{ d.titulo }}</h1><p>{{ situacao(d.situacao, d.situacao_rotulo) }}</p></div></div>
+<div class="cartao destaque" style="max-width:860px">
+{% if d.versao_atual %}
+<h2>Refazer a anonimização</h2><p>Este documento já tem uma versão anonimizada (nº {{ d.versao_atual.numero }}). Uma nova revisão parte da <b>versão revisada mais recente</b> do texto protegido
+e, ao ser aplicada, gera uma nova versão anonimizada. Os fragmentos já codificados serão realocados automaticamente e os que forem afetados ficarão sinalizados para revisão.</p>
+{% else %}<h2>Iniciar a revisão</h2><p>O ATENA vai procurar possíveis dados pessoais no texto revisado: valores já registrados no cofre, e-mails, telefones, documentos, endereços,
+matrículas, nomes nos rótulos de locutor e nomes próprios. Nada será substituído até você aprovar.</p>{% endif %}
+<p class="suave">Dica: antes de iniciar, registre no cofre (ou na ficha do participante) nomes e apelidos que você já sabe que aparecem — eles serão reconhecidos com o código correto.
+Revise também os <a href="{{ url_for('projeto_editar', uid=uid) }}#privacidade">termos protegidos</a>.</p>
+<form method="post">{{ csrf_campo() }}<button class="btn">{{ icone('anonimizacao') }}Detectar e iniciar revisão</button>
+<a class="btn sec" href="{{ url_for('documento_protegido', uid=uid, did=d.id) }}">Revisar o texto antes</a></form></div>
+{% if sessoes %}<div class="cartao"><h3>Sessões anteriores</h3>{% for s in sessoes %}<div>Sessão {{ s.id }} · {{ situacao(s.situacao) }} · {{ data(s.criado_em) }}</div>{% endfor %}</div>{% endif %}
+{% endblock %}

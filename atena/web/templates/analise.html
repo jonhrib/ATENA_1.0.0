@@ -1,0 +1,22 @@
+{% extends "base.html" %}{% from "_macros.html" import icone, situacao, csrf_campo, data with context %}
+{% block titulo %}Análise temática{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><div class="titulo"><h1>Análise temática — Braun e Clarke (2006)</h1>
+<p>Seis fases recursivas: é possível voltar a qualquer fase a qualquer momento, e cada mudança fica registrada. Os indicadores são descritivos; a conclusão de cada fase é uma decisão sua, com justificativa.</p></div>
+<a class="btn sec" href="{{ url_for('decisoes', uid=uid) }}">{{ icone('decisao') }}Decisões metodológicas</a></div>
+{% for f in fases_ %}
+<div class="cartao {{ 'destaque' if f.situacao == 'em_andamento' }}">
+<div class="linha"><h2 class="flex1" style="margin:0">Fase {{ f.numero }} — {{ f.nome }}</h2>{{ situacao(f.situacao, f.situacao_rotulo) }}
+<a class="btn sec pq" href="{{ url_for(f.rota, uid=uid) }}">Ir para as ferramentas ›</a></div>
+<p class="suave" style="margin:6px 0">{{ f.descricao }}</p>
+<div class="grade g2"><div><ul style="margin:0;padding-left:18px">{% for o in f.orientacao %}<li>{{ o }}</li>{% endfor %}</ul></div>
+<div><table class="tabela"><tbody>{% for a, b in f.indicadores %}<tr><td>{{ a }}</td><td class="num"><b>{{ b }}</b></td></tr>{% endfor %}</tbody></table>
+{% if f.observacao %}<p style="margin-top:8px"><b>Registro de conclusão:</b> {{ f.observacao }}{% if f.concluida_em %} <small class="suave">({{ data(f.concluida_em) }})</small>{% endif %}</p>{% endif %}</div></div>
+<div class="linha" style="margin-top:8px">
+{% if f.situacao != 'concluida' %}<details><summary class="btn pq">Registrar conclusão da fase</summary><form method="post" action="{{ url_for('fase_acao', uid=uid, n=f.numero, acao='concluir') }}" style="margin-top:6px;min-width:520px">{{ csrf_campo() }}
+<textarea name="observacao" rows="3" required placeholder="Por que você considera esta fase concluída? (entra no relatório metodológico)"></textarea><button class="btn pq" style="margin-top:4px">Concluir fase {{ f.numero }}</button></form></details>
+{% else %}<details><summary class="btn sec pq">Reabrir fase</summary><form method="post" action="{{ url_for('fase_acao', uid=uid, n=f.numero, acao='reabrir') }}" style="margin-top:6px;min-width:520px">{{ csrf_campo() }}
+<textarea name="observacao" rows="2" required placeholder="Motivo para retornar a esta fase"></textarea><button class="btn sec pq" style="margin-top:4px">Reabrir</button></form></details>{% endif %}
+{% if f.historico %}<details><summary class="btn-link">histórico da fase</summary>{% for h in f.historico %}<div class="suave" style="font-size:.84rem">{{ data(h.momento) }} · {{ h.operacao }} · {{ h.justificativa }}</div>{% endfor %}</details>{% endif %}
+</div></div>{% endfor %}
+{% endblock %}

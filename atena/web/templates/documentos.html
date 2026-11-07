@@ -1,0 +1,44 @@
+{% extends "base.html" %}{% from "_macros.html" import icone, situacao, csrf_campo, vazio, data with context %}
+{% block titulo %}Documentos{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><div class="titulo"><h1>Documentos e entrevistas</h1>
+<p>Importe arquivos ({{ formatos }}) ou cole o texto. O original é preservado e cifrado no cofre; a análise usa somente a versão anonimizada.</p></div></div>
+{% if not cofre_aberto %}<div class="aviso alerta">{{ icone('cofre') }}<div class="flex1">Para importar documentos, desbloqueie o cofre (os originais podem conter dados pessoais).</div>
+<a class="btn sec pq" href="{{ url_for('cofre', uid=uid, proximo=request.path) }}">Desbloquear</a></div>{% endif %}
+<div class="grade g3">
+<form method="post" action="{{ url_for('documentos_importar', uid=uid) }}" enctype="multipart/form-data" class="cartao">{{ csrf_campo() }}
+<h2>{{ icone('documentos') }} Importar arquivo(s)</h2>
+<input type="file" name="arquivos" multiple required>
+<label>Tipo</label><select name="tipo">{% for k, v in tipos.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select>
+<label>Participante</label><select name="participante_id"><option value="">— nenhum / definir depois —</option>{% for p in participantes %}<option value="{{ p.id }}">{{ p.codigo }}</option>{% endfor %}</select>
+<label>Título (para um arquivo)</label><input type="text" name="titulo" placeholder="Não use nomes de pessoas">
+<label>Data da coleta</label><input type="date" name="data_coleta">
+<label class="opcao"><input type="checkbox" name="ja_anonimizado" value="1"> O texto já está anonimizado (vai direto para a análise)</label>
+<button class="btn" style="margin-top:8px">Importar</button></form>
+<form method="post" action="{{ url_for('documentos_colar', uid=uid) }}" class="cartao">{{ csrf_campo() }}
+<h2>{{ icone('editor') }} Colar transcrição</h2>
+<textarea name="texto" rows="7" required placeholder="Formato recomendado:&#10;Entrevistador - 10:00:&#10;Pergunta...&#10;&#10;Nome do participante - 10:01:&#10;Resposta..."></textarea>
+<label>Título</label><input type="text" name="titulo">
+<div class="grade g2"><div><label>Tipo</label><select name="tipo">{% for k, v in tipos.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></div>
+<div><label>Participante</label><select name="participante_id"><option value="">—</option>{% for p in participantes %}<option value="{{ p.id }}">{{ p.codigo }}</option>{% endfor %}</select></div></div>
+<label class="opcao"><input type="checkbox" name="ja_anonimizado" value="1"> Já anonimizado</label>
+<button class="btn" style="margin-top:8px">Criar documento</button></form>
+<form method="post" action="{{ url_for('documentos_legado', uid=uid) }}" enctype="multipart/form-data" class="cartao">{{ csrf_campo() }}
+<h2>Importar do sistema anterior</h2>
+<p class="suave">ZIP da pasta <code>Desenvolvimento</code> (sistema de linha de comando do TCC). Importa as transcrições <b>processadas</b> (já anonimizadas),
+a ficha de participantes e os termos protegidos. As transcrições brutas não são importadas.</p>
+<label>ZIP do projeto anterior</label><input type="file" name="zip" accept=".zip" required>
+<label>Chave do mapeamento (opcional: <code>chave.key</code>)</label><input type="file" name="chave">
+<div class="ajuda">Se informada, a correspondência de identidades é recifrada no cofre do ATENA.</div>
+<label class="opcao"><input type="checkbox" name="excecoes" value="1"> Importar também a lista de falsos positivos como exceções</label>
+<button class="btn sec" style="margin-top:8px">Importar</button></form>
+</div>
+<div class="cartao"><div class="linha"><h2 class="flex1" style="margin:0">Documentos ({{ lista|length }})</h2><input type="search" placeholder="Filtrar…" data-filtrar="#tab-docs" style="max-width:260px"></div>
+{% if lista %}<table class="tabela" id="tab-docs" style="margin-top:10px"><thead><tr><th>Código</th><th>Título</th><th>Participante</th><th>Situação</th><th>Versão em uso</th><th class="num">Fragmentos</th><th></th></tr></thead><tbody>
+{% for d in lista %}<tr data-texto="{{ d.codigo }} {{ d.titulo }} {{ d.participante_codigo }}" class="{{ 'suave' if not d.ativo }}">
+<td class="mono"><a href="{{ url_for('documento', uid=uid, did=d.id) }}">{{ d.codigo }}</a></td><td>{{ d.titulo }}{% if not d.ativo %} <span class="etiqueta">arquivado</span>{% endif %}<br><small>{{ d.tipo_rotulo }} · {{ d.extensao }} · {{ data(d.criado_em) }}</small></td>
+<td class="mono">{{ d.participante_codigo or '—' }}</td><td>{{ situacao(d.situacao, d.situacao_rotulo) }}{% if d.n_inconsistentes %} <span class="etiqueta erro">{{ d.n_inconsistentes }} inconsistente(s)</span>{% endif %}</td>
+<td>{{ ('anonimizada v' ~ d.versao_numero) if d.versao_numero else '—' }}</td><td class="num">{{ d.n_fragmentos }}</td>
+<td style="white-space:nowrap">{% if d.versao_numero %}<a class="btn sec pq" href="{{ url_for('editor', uid=uid, did=d.id) }}">Editor</a>{% else %}<a class="btn pq" href="{{ url_for('anonimizacao', uid=uid, did=d.id) }}">Anonimizar</a>{% endif %}</td></tr>{% endfor %}</tbody></table>
+{% else %}{{ vazio('Nenhum documento importado.', 'documentos') }}{% endif %}</div>
+{% endblock %}

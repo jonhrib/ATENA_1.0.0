@@ -1,0 +1,9 @@
+{% extends "base.html" %}{% from "_macros.html" import icone, situacao, vazio with context %}
+{% block titulo %}Editor{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><div class="titulo"><h1>Editor de transcrições</h1><p>Escolha uma transcrição anonimizada para ler, codificar ou editar.</p></div></div>
+<div class="grade g3">{% for d in lista %}<div class="cartao"><div class="linha"><b class="flex1">{{ d.codigo }} — {{ d.titulo }}</b>{{ situacao(d.situacao, d.situacao_rotulo) }}</div>
+<p class="suave" style="margin:4px 0">{{ d.participante_codigo or 'sem participante' }} · {{ d.n_fragmentos }} fragmentos{% if d.versao_numero %} · versão nº {{ d.versao_numero }}{% endif %}</p>
+{% if d.versao_numero %}<a class="btn pq" href="{{ url_for('editor', uid=uid, did=d.id) }}">{{ icone('editor') }}Abrir</a>{% else %}<a class="btn sec pq" href="{{ url_for('anonimizacao', uid=uid, did=d.id) }}">Anonimizar primeiro</a>{% endif %}</div>
+{% else %}{{ vazio('Nenhum documento.') }}{% endfor %}</div>
+{% endblock %}

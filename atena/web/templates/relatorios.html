@@ -1,0 +1,24 @@
+{% extends "base.html" %}{% from "_macros.html" import icone, situacao, csrf_campo, data with context %}
+{% block titulo %}Relatórios{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><div class="titulo"><div class="migalhas">Fase 6 — {{ fase.nome }} · {{ situacao(fase.situacao, fase.situacao_rotulo) }}</div><h1>Relatórios e exportação</h1>
+<p>Rascunhos são gerados a partir dos dados da análise (temas, definições, evidências, decisões). Citações são vinculadas aos fragmentos originais. Revise, complete e aprove cada texto.</p></div></div>
+<div class="grade g-lado">
+<div>
+<div class="cartao"><h2>Relatórios</h2>{% for r in lista %}<div class="linha" style="border-bottom:1px solid var(--borda);padding:8px 0"><div class="flex1"><a href="{{ url_for('relatorio', uid=uid, rid=r.id) }}"><b>{{ r.titulo }}</b></a><br>
+<small class="suave">{{ r.tipo_rotulo }} · {{ r.n_versoes }} versão(ões) · atualizado {{ data(r.atualizado_em) }}</small></div>{{ situacao(r.situacao) }}</div>
+{% else %}<p class="suave">Nenhum relatório ainda.</p>{% endfor %}
+<form method="post" class="linha" style="margin-top:12px">{{ csrf_campo() }}<select name="tipo" style="max-width:320px"><option value="final">Relatório final da análise (rascunho a partir dos temas)</option>
+<option value="metodologico">Relatório metodológico (rascunho a partir do processo)</option><option value="livre">Texto livre</option></select><button class="btn">{{ icone('mais') }}Gerar</button></form></div>
+<div class="cartao"><h2>Exportações recentes</h2><table class="tabela"><tbody>{% for e in exportacoes %}<tr><td>{{ e.tipo }}</td><td>{{ e.formato }}</td><td class="suave">{{ data(e.criado_em) }}</td>
+<td>{% if e.protegida %}<span class="etiqueta erro">protegida</span>{% endif %}</td><td>{% if e.existe %}<a href="{{ url_for('exportacao_baixar', uid=uid, arquivo=e.arquivo) }}">baixar</a>{% endif %}</td></tr>{% else %}<tr><td class="suave">Nenhuma.</td></tr>{% endfor %}</tbody></table></div></div>
+<div class="cartao destaque"><h2>{{ icone('baixar') }} Exportar dados (anonimizados)</h2>
+<p class="suave">Formatos abertos. Não incluem o mapeamento de identidades nem os originais.</p>
+<form method="post" action="{{ url_for('exportar', uid=uid) }}">{{ csrf_campo() }}
+<label>Conjunto</label><select name="conjunto"><option value="tudo">Todos os conjuntos</option>{% for k, v in conjuntos.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select>
+<label>Formato</label><select name="formato"><option value="xlsx">Excel (XLSX)</option><option value="csv">CSV (um conjunto)</option><option value="json">JSON</option>
+<option value="zip">Pacote ZIP (CSV + XLSX + transcrições TXT)</option><option value="docx">DOCX (somente transcrições)</option></select>
+<button class="btn" style="margin-top:10px">Exportar</button></form>
+<p class="ajuda" style="margin-top:10px">Relatórios (DOCX, PDF, Markdown, HTML) são exportados na página de cada relatório. O mapeamento só pode ser exportado pela exportação protegida, no <a href="{{ url_for('cofre', uid=uid) }}">cofre</a>.</p></div>
+</div>
+{% endblock %}

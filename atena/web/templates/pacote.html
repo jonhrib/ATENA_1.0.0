@@ -1,0 +1,9 @@
+{% extends "base.html" %}{% from "_macros.html" import icone with context %}
+{% block titulo %}Pacote protegido{% endblock %}
+{% block conteudo %}
+<div class="aviso erro">{{ icone('alerta') }}<div>{{ dados.aviso }}</div></div>
+<div class="cartao"><h1>Pacote protegido — {{ dados.projeto }}</h1><p class="suave">Gerado em {{ dados.gerado_em }} por {{ dados.gerador }}</p>
+<table class="tabela"><thead><tr><th>Código</th><th>Categoria</th><th>Valor</th><th>Variantes</th></tr></thead><tbody>
+{% for i in dados.identidades %}<tr><td class="mono">{{ i.codigo }}</td><td>{{ i.categoria }}</td><td>{{ i.valor }}</td><td>{{ i.variantes|join('; ') }}</td></tr>{% endfor %}</tbody></table>
+<a class="btn sec" href="{{ url_for('configuracoes') }}" style="margin-top:10px">Fechar</a></div>
+{% endblock %}

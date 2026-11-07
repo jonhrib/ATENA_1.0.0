@@ -1,0 +1,35 @@
+{% extends "base.html" %}{% from "_macros.html" import icone, situacao, csrf_campo, data with context %}
+{% block titulo %}Envio à IA #{{ i.id }}{% endblock %}
+{% block conteudo %}
+{% set codigos_nomes = codigos %}
+<div class="cabecalho"><div class="titulo"><div class="migalhas"><a href="{{ url_for('ia_painel', uid=uid) }}">Inteligência artificial</a> ›</div>
+<h1>{{ 'Prévia do envio' if i.situacao == 'preparada' else 'Envio' }} #{{ i.id }}</h1><p>{{ situacao(i.situacao) }} · {{ data(i.criado_em) }} · modelo <span class="mono">{{ i.modelo }}</span></p></div></div>
+<div class="grade g-lado">
+<div>
+<div class="cartao"><h2>1. Finalidade do processamento</h2><p>{{ i.operacao_rotulo }}.</p>
+<p class="suave">Registros envolvidos: {% for r in i.registros_obj %}<span class="chip">{{ r.tipo }} {{ r.fragmento_id or r.codigo_id or r.tema_id or r.documento_id or r.relatorio_id or '' }}{% if r.inicio is defined %} ({{ r.inicio }}–{{ r.fim }}){% endif %}</span>{% endfor %}</p></div>
+<div class="cartao"><h2>2. Conteúdo que será enviado (exatamente)</h2>
+<p class="suave">Instruções do sistema (fixas) e mensagem com o material. {{ conteudo_usuario|length }} caracteres · custo estimado US$ {{ '%.4f'|format(i.custo_estimado) }}.</p>
+<details class="dobra"><summary>Instrução de sistema</summary><div class="json-claro">{{ sistema }}</div></details>
+<div class="json-claro" style="max-height:520px">{{ conteudo_usuario }}</div></div>
+{% if i.resposta %}<div class="cartao"><h2>Resposta recebida</h2><div class="json-claro">{{ i.resposta }}</div><p class="suave">{{ i.tokens_entrada }} tokens de entrada, {{ i.tokens_saida }} de saída · US$ {{ '%.4f'|format(i.custo_estimado) }}</p></div>{% endif %}
+{% if i.erro %}<div class="aviso erro">{{ icone('erro') }}<div>{{ i.erro }}</div></div>{% endif %}
+{% if i.sugestoes %}<div class="cartao"><h2>Sugestões ({{ i.sugestoes|length }})</h2>{% for s in i.sugestoes %}{% include "_sugestao.html" %}{% endfor %}</div>{% endif %}
+</div>
+<div class="painel-lateral">
+<div class="cartao {{ 'destaque' if i.verificacao.itens }}"><h2>3. Verificação de privacidade</h2>
+{% if i.verificacao.aviso %}<div class="aviso alerta" style="font-size:.86rem"><div>{{ i.verificacao.aviso }}</div></div>{% endif %}
+{% if i.verificacao.itens %}<p>Possíveis informações pessoais encontradas no conteúdo:</p>
+{% for x in i.verificacao.itens %}<div class="fragmento" style="padding:6px 10px"><b>{{ x.trecho }}</b> <span class="etiqueta {{ 'erro' if x in i.verificacao.bloqueantes else 'alerta' }}">{{ x.categoria }} · {{ x.confianca }}</span><div class="suave" style="font-size:.8rem">{{ x.motivo }}</div></div>{% endfor %}
+{% else %}<div class="aviso ok"><div>Nenhum possível dado pessoal detectado pela verificação local{{ '' if i.verificacao.cofre_verificado else ' (sem comparação com o mapeamento: cofre bloqueado)' }}.</div></div>{% endif %}
+<p class="ajuda">O mapeamento de identidades, os originais e os textos não anonimizados nunca fazem parte do envio.</p></div>
+{% if i.situacao == 'preparada' %}
+<form method="post" class="cartao">{{ csrf_campo() }}<h2>4. Autorização</h2>
+{% if not c.ia_habilitada or not tem_chave %}<div class="aviso alerta"><div>A integração está desativada ou sem chave. <a href="{{ url_for('configuracoes') }}#ia">Configurar</a></div></div>{% endif %}
+<label class="opcao"><input type="checkbox" name="confirmo_anonimizado" value="1" required> Conferi o conteúdo acima e confirmo que ele está anonimizado.</label>
+{% if i.verificacao.bloqueantes %}<label class="opcao"><input type="checkbox" name="revisei_alertas" value="1"> Revisei os alertas de alta confiança e confirmo que não são dados pessoais.</label>{% endif %}
+<label class="opcao"><input type="checkbox" name="confirmo_envio" value="1" required> Autorizo o envio deste conteúdo à OpenAI para a finalidade descrita.</label>
+<p class="suave" style="font-size:.82rem">Gasto estimado no mês: US$ {{ '%.4f'|format(gasto) }} de US$ {{ c.ia_limite_mensal_usd }}.</p>
+<div class="linha"><button class="btn roxo" {{ 'disabled' if not c.ia_habilitada or not tem_chave }}>{{ icone('ia') }}Enviar</button><button class="btn sec" name="acao" value="cancelar" formnovalidate>Cancelar envio</button></div></form>{% endif %}
+</div></div>
+{% endblock %}

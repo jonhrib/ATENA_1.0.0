@@ -1,0 +1,77 @@
+{% extends "base.html" %}{% from "_macros.html" import icone, situacao, csrf_campo, data with context %}
+{% block titulo %}{{ d.codigo }} · Editor{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><div class="titulo"><div class="migalhas"><a href="{{ url_for('editor_escolha', uid=uid) }}">Editor</a> › <a href="{{ url_for('documento', uid=uid, did=d.id) }}">{{ d.codigo }}</a></div>
+<h1>{{ d.titulo }}</h1><p><span class="mono">{{ d.participante_codigo or 'sem participante' }}</span> · versão anonimizada nº {{ v.numero }} ({{ data(v.criado_em) }}) · {{ frags|length }} fragmentos · {{ n_leituras }} leitura(s) integral(is)</p></div>
+{% if anterior %}<a class="btn sec" href="{{ url_for('editor', uid=uid, did=anterior, modo=modo) }}">{{ icone('esq') }}Anterior</a>{% endif %}
+{% if proximo %}<a class="btn sec" href="{{ url_for('editor', uid=uid, did=proximo, modo=modo) }}">Próxima{{ icone('dir') }}</a>{% endif %}</div>
+<nav class="abas">
+<a href="{{ url_for('editor', uid=uid, did=d.id, modo='leitura') }}" class="{{ 'ativa' if modo == 'leitura' }}">Leitura e familiarização</a>
+<a href="{{ url_for('editor', uid=uid, did=d.id, modo='codificar') }}" class="{{ 'ativa' if modo == 'codificar' }}">Codificação</a>
+<a href="{{ url_for('editor', uid=uid, did=d.id, modo='editar') }}" class="{{ 'ativa' if modo == 'editar' }}">Editar texto</a>
+<a href="{{ url_for('editor_versoes', uid=uid, did=d.id) }}">Versões e comparação</a></nav>
+
+{% if modo == 'editar' %}
+<form method="post" action="{{ url_for('editor_salvar', uid=uid, did=d.id) }}" class="cartao">{{ csrf_campo() }}<input type="hidden" name="versao_base" value="{{ v.numero }}">
+<div class="aviso info">{{ icone('info') }}<div>Salvar cria a versão nº {{ v.numero + 1 }}; a atual é preservada. Os {{ frags|length }} fragmentos codificados serão realocados:
+os que tiverem o texto alterado ficarão marcados como <b>inconsistentes</b> para você revisar a associação. Edite apenas o texto anonimizado — não reintroduza nomes reais.</div></div>
+<textarea name="texto" rows="28" style="font-family:var(--fonte-leitura);font-size:1rem;line-height:1.7">{{ v.texto }}</textarea>
+<div class="linha" style="margin-top:8px"><input type="text" name="observacao" class="flex1" required placeholder="Observação sobre a alteração (obrigatória) — ex.: correção de palavra mal transcrita"><button class="btn">Salvar nova versão</button></div></form>
+{% else %}
+<div class="grade g-lado">
+<div>
+<div class="linha" style="margin-bottom:8px"><input type="search" id="busca-texto" data-url="{{ url_for('api_buscar', uid=uid, did=d.id) }}" placeholder="Localizar palavra ou expressão (Enter)" class="flex1">
+<button class="btn sec pq" id="busca-ant" type="button">{{ icone('esq') }}</button><button class="btn sec pq" id="busca-prox" type="button">{{ icone('dir') }}</button><span id="busca-info" class="suave"></span></div>
+<div class="transcricao" id="transcricao" data-modo="{{ modo }}" data-doc="{{ d.id }}" data-ia="{{ '1' if ia_ativa }}"
+ data-url-frag="{{ url_for('api_fragmento_criar', uid=uid) }}" data-url-frag-base="{{ url_for('api_fragmento', uid=uid, fid=0)[:-1] }}"
+ data-url-ia="{{ url_for('ia_preparar', uid=uid) }}" data-url-codigos="{{ url_for('api_codigos', uid=uid) }}" data-url-codigo-base="{{ url_for('codigo', uid=uid, cid=0)[:-1] }}">
+{%- for sg in segs -%}
+{%- set cls = ['seg'] -%}{%- if sg.rotulo %}{% set _ = cls.append('rotulo') %}{% endif -%}
+{%- if sg.ids -%}
+{%- set f0 = frags_json[sg.ids[0]] -%}
+{%- if f0.c|length == 0 and sg.ids|length == 1 %}{% set _ = cls.append('relevante') %}{% else %}{% set _ = cls.append('f') %}{% endif -%}
+{%- if sg.ids|length == 2 %}{% set _ = cls.append('f2') %}{% elif sg.ids|length > 2 %}{% set _ = cls.append('f3') %}{% endif -%}
+{%- for i in sg.ids if frags_json[i].s == 'inconsistente' %}{% if loop.first %}{% set _ = cls.append('inconsistente') %}{% endif %}{% endfor -%}
+<span class="{{ cls|join(' ') }}" data-i="{{ sg.i }}" data-f="{{ sg.f }}" data-frags="{{ sg.ids|join(',') }}" style="--cor:{{ f0.cor or '#5b3fa0' }}">{{ sg.t }}</span>
+{%- else -%}<span class="{{ cls|join(' ') }}" data-i="{{ sg.i }}" data-f="{{ sg.f }}">{{ sg.t }}</span>{%- endif -%}
+{%- endfor -%}
+</div>
+<p class="suave" style="font-size:.8rem;margin-top:6px">Selecione um trecho com o mouse para {{ 'marcar como relevante ou anotar' if modo == 'leitura' else 'codificar, marcar como relevante, anotar ou pedir sugestões' }}. Clique num trecho destacado para ver seus códigos.
+<span class="etiqueta roxo">codificado</span> <span class="etiqueta alerta">relevante</span> <span class="etiqueta erro">inconsistente</span></p>
+</div>
+<aside class="painel-lateral">
+<div class="cartao" id="painel-fragmento"><h3>Fragmento</h3><p class="suave">Clique num trecho destacado ou selecione um novo trecho.</p></div>
+{% if modo == 'leitura' %}
+<form method="post" action="{{ url_for('editor_leitura', uid=uid, did=d.id) }}" class="cartao">{{ csrf_campo() }}<h3>Leitura integral</h3>
+<p class="suave">Registre quando concluir uma leitura completa desta entrevista (fica no diário de familiarização).</p>
+<input type="text" name="observacao" placeholder="Impressão geral desta leitura (opcional)"><button class="btn sec pq" style="margin-top:6px">Registrar leitura integral</button></form>
+{% endif %}
+<form method="post" action="{{ url_for('notas_view', uid=uid) }}" class="cartao">{{ csrf_campo() }}<h3>{{ icone('notas') }} {{ 'Diário de familiarização' if modo == 'leitura' else 'Memorando' }}</h3>
+<input type="hidden" name="documento_id" value="{{ d.id }}"><input type="hidden" name="fase" value="{{ 1 if modo == 'leitura' else 2 }}">
+<select name="tipo">{% for k, r in tipos_nota.items() %}<option value="{{ k }}" {{ 'selected' if (modo == 'leitura' and k == 'familiarizacao') or (modo != 'leitura' and k == 'memo') }}>{{ r }}</option>{% endfor %}</select>
+<textarea name="texto" rows="3" required placeholder="Ideias, padrões, dúvidas…" style="margin-top:6px"></textarea><button class="btn sec pq" style="margin-top:6px">Registrar nota</button>
+{% for n in notas[:8] %}<div class="fragmento" style="margin-top:8px"><div class="meta">{{ n.tipo_rotulo }} · {{ data(n.criado_em) }}{% if n.fragmento_id %} · <a href="#frag-{{ n.fragmento_id }}">fragmento {{ n.fragmento_id }}</a>{% endif %}</div><span class="texto-quebra">{{ n.texto }}</span></div>{% endfor %}</form>
+{% if modo == 'codificar' %}
+<div class="cartao"><h3>Códigos neste documento</h3>
+{% set usados = [] %}{% for f in frags %}{% for c in f.codigos %}{% if c.id not in usados %}{% set _ = usados.append(c.id) %}{% endif %}{% endfor %}{% endfor %}
+{% for c in codigos if c.id in usados %}<a class="chip destacar-codigo" href="#" data-codigo="{{ c.id }}"><i style="background:{{ c.cor }}"></i>{{ c.nome }}</a>{% else %}<p class="suave">Nenhum ainda.</p>{% endfor %}
+<p class="ajuda">Clique num código para destacar seus fragmentos nesta entrevista.</p></div>
+{% endif %}
+</aside></div>
+{% endif %}
+
+<dialog id="dlg-codificar"><form method="dialog"><div class="cab"><h3 id="cod-titulo">Codificar trecho</h3></div><div class="corpo">
+<div class="citacao-bloco" id="cod-trecho" style="max-height:140px;overflow:auto"></div>
+<label>Códigos existentes</label><input type="search" id="cod-filtro" placeholder="Filtrar códigos…">
+<div class="lista-escolha" id="cod-lista"></div>
+<fieldset><legend>Novo código</legend><input type="text" id="cod-novo-nome" placeholder="Nome do código (próximo da linguagem dos dados)">
+<textarea id="cod-novo-desc" rows="2" placeholder="Descrição do código" style="margin-top:6px"></textarea></fieldset>
+<label>Justificativa (opcional)</label><input type="text" id="cod-just" placeholder="Por que este trecho recebe este código?">
+</div><div class="pe"><button class="btn sec" value="cancelar">Cancelar</button><button class="btn" value="ok" id="cod-ok">Salvar codificação</button></div></form></dialog>
+
+<dialog id="dlg-texto"><form method="dialog"><div class="cab"><h3 id="txt-titulo">Nota</h3></div><div class="corpo">
+<p id="txt-ajuda" class="suave"></p><textarea id="txt-valor" rows="4"></textarea></div>
+<div class="pe"><button class="btn sec" value="cancelar">Cancelar</button><button class="btn" value="ok">Confirmar</button></div></form></dialog>
+<script type="application/json" id="dados-frags">{{ frags_json|tojson }}</script>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/editor.js') }}"></script>{% endblock %}

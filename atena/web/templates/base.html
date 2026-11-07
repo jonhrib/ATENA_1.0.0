@@ -1,0 +1,82 @@
+{% from "_macros.html" import icone, situacao with context %}
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block titulo %}{{ NOME }}{% endblock %} · {{ NOME }}</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Ccircle cx='20' cy='20' r='19' fill='%230f5c63'/%3E%3Ccircle cx='15' cy='19' r='3' fill='%23b8a5ef'/%3E%3Ccircle cx='25' cy='19' r='3' fill='%23b8a5ef'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/atena.css') }}">
+<meta name="csrf" content="{{ csrf }}">
+{% block cabeca %}{% endblock %}
+</head>
+<body>
+<div class="app">
+  <aside class="lateral">
+    <a class="marca" href="{{ url_for('inicio') }}"><svg><use href="{{ url_for('static', filename='icones.svg') }}#logo"/></svg>
+      <div><strong>{{ NOME }}</strong><span>{{ NOME_COMPLETO }}</span></div></a>
+    {% set ep = request.endpoint %}
+    <nav class="nav">
+      {% if uid %}
+      <a href="{{ url_for('painel_projeto', uid=uid) }}" class="{{ 'ativo' if ep == 'painel_projeto' }}">{{ icone('inicio') }}Início</a>
+      <a href="{{ url_for('inicio') }}">{{ icone('projetos') }}Projetos</a>
+      <div class="grupo">Dados</div>
+      <a href="{{ url_for('participantes', uid=uid) }}" class="{{ 'ativo' if ep in ('participantes','participante') }}">{{ icone('participantes') }}Participantes</a>
+      <a href="{{ url_for('documentos', uid=uid) }}" class="{{ 'ativo' if ep in ('documentos','documento','documento_protegido') }}">{{ icone('documentos') }}Documentos</a>
+      <a href="{{ url_for('anonimizacao_lista', uid=uid) }}" class="{{ 'ativo' if ep.startswith('anonimizacao') }}">{{ icone('anonimizacao') }}Anonimização</a>
+      <a href="{{ url_for('entrevistas', uid=uid) }}" class="{{ 'ativo' if ep == 'entrevistas' }}">{{ icone('entrevistas') }}Entrevistas</a>
+      <a href="{{ url_for('editor_escolha', uid=uid) }}" class="{{ 'ativo' if ep in ('editor','editor_escolha','editor_versoes') }}">{{ icone('editor') }}Editor</a>
+      <div class="grupo">Análise temática</div>
+      <a href="{{ url_for('analise', uid=uid) }}" class="{{ 'ativo' if ep in ('analise','decisoes') }}">{{ icone('analise') }}Análise temática</a>
+      <a href="{{ url_for('codigos', uid=uid) }}" class="{{ 'ativo' if ep in ('codigos','codigo','codigos_matriz') }}">{{ icone('codigos') }}Códigos</a>
+      <a href="{{ url_for('mapa', uid=uid) }}" class="{{ 'ativo' if ep in ('mapa','tema','revisao','definicao','tema_definir') }}">{{ icone('temas') }}Temas</a>
+      <a href="{{ url_for('visualizacoes', uid=uid) }}" class="{{ 'ativo' if ep in ('visualizacoes','consulta_fragmentos') }}">{{ icone('visualizacoes') }}Visualizações</a>
+      <a href="{{ url_for('notas_view', uid=uid) }}" class="{{ 'ativo' if ep == 'notas_view' }}">{{ icone('notas') }}Diário e notas</a>
+      <a href="{{ url_for('relatorios', uid=uid) }}" class="{{ 'ativo' if ep in ('relatorios','relatorio') }}">{{ icone('relatorios') }}Relatórios</a>
+      <div class="grupo">Rastreabilidade</div>
+      <a href="{{ url_for('historico', uid=uid) }}" class="{{ 'ativo' if ep == 'historico' }}">{{ icone('historico') }}Histórico</a>
+      <a href="{{ url_for('ia_painel', uid=uid) }}" class="{{ 'ativo' if ep.startswith('ia_') }}">{{ icone('ia') }}Inteligência artificial</a>
+      <a href="{{ url_for('backup_projeto', uid=uid) }}" class="{{ 'ativo' if ep in ('backup_projeto','integridade') }}">{{ icone('backup') }}Backup e integridade</a>
+      <a href="{{ url_for('projeto_editar', uid=uid) }}" class="{{ 'ativo' if ep == 'projeto_editar' }}">{{ icone('projetos') }}Dados do projeto</a>
+      {% else %}
+      <a href="{{ url_for('inicio') }}" class="{{ 'ativo' if ep == 'inicio' }}">{{ icone('projetos') }}Projetos</a>
+      {% endif %}
+      <a href="{{ url_for('configuracoes') }}" class="{{ 'ativo' if ep == 'configuracoes' }}">{{ icone('config') }}Configurações</a>
+    </nav>
+    <div class="rodape">Versão {{ VERSAO }} · funcionando localmente<br>Nenhum dado sai deste computador sem a sua autorização.</div>
+  </aside>
+  <div class="principal">
+    <header class="topo">
+      {% if proj %}
+        <span class="projeto-atual" title="{{ proj.nome }}">{{ proj.nome }}</span>
+        {% if proj.situacao == 'arquivado' %}<span class="etiqueta">arquivado</span>{% endif %}
+        <span class="espaco"></span>
+        {% if cofre_aberto %}
+          <form method="post" action="{{ url_for('cofre_bloquear', uid=uid) }}" class="inline">
+            <input type="hidden" name="_csrf" value="{{ csrf }}">
+            <button class="btn sec pq" title="O cofre (mapeamento e originais) está aberto. Clique para bloquear.">{{ icone('cofre-aberto') }}Cofre aberto · bloquear</button></form>
+        {% else %}
+          <a class="btn sec pq" href="{{ url_for('cofre', uid=uid, proximo=request.full_path) }}" title="O cofre está bloqueado. Necessário para importar e anonimizar.">{{ icone('cofre') }}Cofre bloqueado</a>
+        {% endif %}
+      {% else %}<span class="espaco"></span>{% endif %}
+      <form method="post" action="{{ url_for('encerrar') }}" class="inline form-confirmar" data-confirmar="Encerrar o ATENA? Os dados já estão salvos.">
+        <input type="hidden" name="_csrf" value="{{ csrf }}"><button class="btn sec pq" title="Encerrar o programa">{{ icone('sair') }}Encerrar</button></form>
+    </header>
+    <div class="mensagens" id="mensagens">
+      {% for cat, msg in get_flashed_messages(with_categories=true) %}
+        <div class="aviso {{ cat }}">{{ icone({'sucesso':'ok','erro':'erro','alerta':'alerta'}.get(cat, 'info')) }}<div>{{ msg }}</div><button class="fechar" type="button" aria-label="Fechar">×</button></div>
+      {% endfor %}
+    </div>
+    <main class="conteudo">{% block conteudo %}{% endblock %}</main>
+  </div>
+</div>
+<dialog id="dlg-confirmar"><form method="dialog">
+  <div class="cab"><h3>Confirmar operação</h3></div>
+  <div class="corpo"><p id="dlg-confirmar-texto"></p><div id="dlg-confirmar-just"><label for="dlg-justificativa">Justificativa</label>
+    <textarea id="dlg-justificativa" rows="3"></textarea><div class="ajuda">A justificativa fica registrada no histórico do projeto.</div></div></div>
+  <div class="pe"><button class="btn sec" value="cancelar">Cancelar</button><button class="btn" value="ok" id="dlg-confirmar-ok">Confirmar</button></div>
+</form></dialog>
+<script src="{{ url_for('static', filename='js/atena.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

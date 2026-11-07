@@ -1,0 +1,18 @@
+{
+  "backup_automatico": true,
+  "backup_intervalo_horas": 24,
+  "backup_reter_ultimos": 0,
+  "backup_pasta": "",
+  "cofre_bloqueio_minutos": 20,
+  "ia_habilitada": false,
+  "ia_modelo": "gpt-6-luna",
+  "ia_url_base": "https://api.openai.com/v1",
+  "ia_temperatura": 0.2,
+  "ia_tempo_limite_s": 90,
+  "ia_preco_entrada": 0.10,
+  "ia_preco_saida": 0.50,
+  "ia_limite_mensal_usd": 5.0,
+  "ia_max_caracteres_envio": 24000,
+  "porta": 0,
+  "abrir_navegador": true
+}

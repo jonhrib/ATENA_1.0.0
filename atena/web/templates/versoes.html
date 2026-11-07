@@ -1,0 +1,16 @@
+{% extends "base.html" %}{% from "_macros.html" import icone, situacao, csrf_campo, data, confirmar with context %}
+{% block titulo %}Versões · {{ d.codigo }}{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><div class="titulo"><div class="migalhas"><a href="{{ url_for('editor', uid=uid, did=d.id) }}">{{ d.codigo }}</a> ›</div>
+<h1>Versões da transcrição anonimizada</h1><p>Cada salvamento gera uma versão imutável. Restaurar cria uma nova versão com o conteúdo antigo.</p></div></div>
+<div class="grade g-lado-esq">
+<div class="cartao"><form method="get"><table class="tabela"><thead><tr><th>A</th><th>B</th><th>Versão</th></tr></thead><tbody>
+{% for v in versoes %}<tr><td><input type="radio" name="a" value="{{ v.id }}" {{ 'checked' if a == v.id or (not a and loop.index == 2) }}></td><td><input type="radio" name="b" value="{{ v.id }}" {{ 'checked' if b == v.id or (not b and loop.first) }}></td>
+<td><b>nº {{ v.numero }}</b> {% if loop.first %}<span class="etiqueta ok">atual</span>{% endif %}<br><small>{{ data(v.criado_em) }} · {{ v.origem_rotulo }}<br>{{ v.observacao }}</small>
+{% if not loop.first %}<br>{{ confirmar(url_for('editor_restaurar', uid=uid, did=d.id), 'Restaurar', 'Restaurar a versão nº ' ~ v.numero ~ '? Será criada uma nova versão com este conteúdo e os fragmentos serão realocados.', {'versao_id': v.id}, 'btn sec pq') }}{% endif %}</td></tr>{% endfor %}
+</tbody></table><button class="btn sec" style="margin-top:8px">Comparar A × B</button></form></div>
+<div class="cartao">{% if comp %}<h2>Comparação: nº {{ comp.a.numero }} → nº {{ comp.b.numero }}</h2>
+<p class="suave">{{ comp.estatisticas.linhas_removidas }} linha(s) removida(s) · {{ comp.estatisticas.linhas_inseridas }} inserida(s) · {{ comp.estatisticas.caracteres_antes }} → {{ comp.estatisticas.caracteres_depois }} caracteres</p>
+<div class="diff rolagem" style="max-height:640px">{% for l in comp.linhas %}<div class="{{ l.tipo }}">{{ {'removida':'− ','inserida':'+ ','igual':'  ','omitido':''}[l.tipo] }}{{ l.texto }}</div>{% endfor %}</div>
+{% else %}<p class="suave">Escolha duas versões e clique em comparar.</p>{% endif %}</div></div>
+{% endblock %}

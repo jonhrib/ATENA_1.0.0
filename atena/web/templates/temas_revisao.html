@@ -1,0 +1,20 @@
+{% extends "base.html" %}{% from "_macros.html" import icone, situacao, chip_codigo with context %}
+{% block titulo %}Revisão dos temas{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><div class="titulo"><div class="migalhas">Fase 4 — {{ fase.nome }} · {{ situacao(fase.situacao, fase.situacao_rotulo) }}</div><h1>Revisão dos temas</h1>
+<p>Nível 1: os extratos de cada tema formam um padrão coerente? Nível 2: o tema funciona em relação ao conjunto dos dados? Os sinais abaixo são pistas — a decisão é sua.</p></div></div>
+<nav class="abas"><a href="{{ url_for('mapa', uid=uid) }}">3 · Mapa e agrupamento</a><a href="{{ url_for('revisao', uid=uid) }}" class="ativa">4 · Revisão</a><a href="{{ url_for('definicao', uid=uid) }}">5 · Definição e nomeação</a></nav>
+<div class="grade g-lado">
+<div class="cartao"><h2>Temas</h2><table class="tabela"><thead><tr><th>Tema</th><th>Situação</th><th class="num">Códigos</th><th class="num">Fragmentos</th><th class="num">Participantes</th><th></th></tr></thead><tbody>
+{% for t in temas %}<tr><td>{{ '↳ ' if t.pai_id }}<a href="{{ url_for('tema', uid=uid, tid=t.id) }}">{{ t.nome }}</a></td><td>{{ situacao(t.situacao, t.situacao_rotulo) }}</td>
+<td class="num">{{ t.n_codigos }}</td><td class="num">{{ t.n_fragmentos }}</td><td class="num">{{ t.n_participantes }}</td><td><a class="btn sec pq" href="{{ url_for('tema', uid=uid, tid=t.id) }}">Revisar</a></td></tr>
+{% else %}<tr><td colspan="6" class="suave">Nenhum tema. Crie temas candidatos na fase 3.</td></tr>{% endfor %}</tbody></table>
+{% if inativos %}<details class="dobra"><summary>Temas descartados ou fundidos ({{ inativos|length }})</summary>{% for t in inativos %}<div><a href="{{ url_for('tema', uid=uid, tid=t.id) }}">{{ t.nome }}</a> {{ situacao(t.situacao, t.situacao_rotulo) }}</div>{% endfor %}</details>{% endif %}</div>
+<div>
+<div class="cartao"><h3>Possíveis sobreposições</h3><p class="suave" style="font-size:.85rem">Pares de temas que compartilham códigos ou boa parte dos fragmentos (índice de Jaccard).</p>
+{% for s in diag.sobreposicoes %}<div class="fragmento"><a href="{{ url_for('tema', uid=uid, tid=s.a.id) }}">{{ s.a.nome }}</a> × <a href="{{ url_for('tema', uid=uid, tid=s.b.id) }}">{{ s.b.nome }}</a>
+<div class="suave" style="font-size:.82rem">{{ s.codigos_comuns }} código(s) em comum · Jaccard dos fragmentos {{ s.jaccard }}</div></div>{% else %}<p class="suave">Nenhuma sobreposição evidente.</p>{% endfor %}</div>
+<div class="cartao"><h3>Sinais para atenção</h3>{% for s in diag.sinais %}<div class="aviso {{ 'alerta' if s.tipo in ('definicao_desatualizada','sem_codigos') else 'info' }}" style="font-size:.88rem"><div><a href="{{ url_for('tema', uid=uid, tid=s.tema.id) }}">{{ s.tema.nome }}</a>: {{ s.texto }}</div></div>{% else %}<p class="suave">Nenhum sinal.</p>{% endfor %}</div>
+<div class="cartao"><h3>Códigos sem tema ({{ diag.codigos_sem_tema|length }})</h3>{% for c in diag.codigos_sem_tema %}{{ chip_codigo(c, uid) }}{% endfor %}</div>
+</div></div>
+{% endblock %}

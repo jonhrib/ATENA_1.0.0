@@ -1,0 +1,45 @@
+{% extends "base.html" %}{% from "_macros.html" import icone, situacao, csrf_campo, data, vazio with context %}
+{% block titulo %}Projetos{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><div class="titulo"><h1>Projetos de pesquisa</h1>
+<p>Cada projeto tem seus próprios participantes, documentos, códigos, temas, relatórios, histórico e cofre criptografado.</p></div>
+<a class="btn" href="{{ url_for('projeto_novo') }}">{{ icone('mais') }}Novo projeto</a></div>
+
+{% if not projetos %}
+<div class="cartao destaque"><h2>Bem-vindo ao ATENA</h2>
+<p>O ATENA apoia todas as etapas de uma pesquisa qualitativa com análise temática (Braun e Clarke, 2006): importação e
+anonimização das entrevistas, familiarização, codificação, construção e revisão de temas, relatório e histórico completo.
+Tudo funciona neste computador, sem internet.</p>
+<div class="linha"><a class="btn" href="{{ url_for('projeto_novo') }}">{{ icone('mais') }}Criar meu primeiro projeto</a>
+<form method="post" action="{{ url_for('projeto_demo') }}" class="inline">{{ csrf_campo() }}<button class="btn sec">Explorar um projeto de demonstração (dados fictícios)</button></form></div></div>
+{% endif %}
+
+<div class="grade g3">
+{% for p in projetos %}
+  <div class="cartao">
+    <div class="linha"><h3 class="flex1" style="margin:0"><a href="{{ url_for('painel_projeto', uid=p.uid) }}">{{ p.nome }}</a></h3>{{ situacao(p.situacao) }}</div>
+    <p class="suave trecho-curto" style="margin-top:6px">{{ p.descricao or p.pergunta or 'Sem descrição.' }}</p>
+    <div class="linha suave" style="font-size:.85rem">
+      <span>{{ p.n_participantes or 0 }} participantes</span>·<span>{{ p.n_documentos or 0 }} documentos</span>·<span>{{ p.n_codigos or 0 }} códigos</span>·<span>{{ p.n_temas or 0 }} temas</span></div>
+    <div class="suave" style="font-size:.8rem;margin-top:6px">Última atividade: {{ data(p.ultima_atividade) }}</div>
+    <div class="linha" style="margin-top:10px"><a class="btn pq" href="{{ url_for('painel_projeto', uid=p.uid) }}">Abrir</a></div>
+  </div>
+{% endfor %}
+</div>
+
+<div class="grade g2">
+<div class="cartao"><h2>Restaurar um backup</h2>
+<p class="suave">Escolha um arquivo <code>.atenabak</code>. Por padrão, o backup é restaurado como um novo projeto (nada é sobrescrito).</p>
+<form method="post" action="{{ url_for('restaurar_backup_upload') }}" enctype="multipart/form-data">{{ csrf_campo() }}
+<input type="file" name="arquivo" accept=".atenabak" required>
+<label>Modo</label><select name="modo"><option value="copia">Restaurar como novo projeto (recomendado)</option>
+<option value="substituir">Substituir o projeto de origem (o atual é guardado em “substituidos” e copiado em backup)</option></select>
+<label>Observação</label><input type="text" name="justificativa" placeholder="Ex.: troca de computador">
+<div class="linha" style="margin-top:10px"><button class="btn sec">{{ icone('backup') }}Restaurar</button></div></form></div>
+<div class="cartao"><h2>Onde ficam os dados</h2>
+<p class="mono" style="word-break:break-all">{{ pasta_dados }}</p>
+<p class="suave">Os bancos de dados SQLite, os originais cifrados, os backups e as exportações ficam nessa pasta, no seu computador.</p>
+<form method="post" action="{{ url_for('abrir_pasta') }}" class="inline">{{ csrf_campo() }}<input type="hidden" name="qual" value="dados"><button class="btn sec pq">Abrir a pasta</button></form>
+{% if projetos %}<form method="post" action="{{ url_for('projeto_demo') }}" class="inline">{{ csrf_campo() }}<button class="btn sec pq">Criar projeto de demonstração</button></form>{% endif %}
+</div></div>
+{% endblock %}

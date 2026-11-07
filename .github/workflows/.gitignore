@@ -1,0 +1,26 @@
+# Ambiente e arquivos gerados pelo Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+build/
+dist/
+
+# Configuração local e chave da API
+atena.env
+.env
+configuracoes.json
+
+# Dados de pesquisa (nunca publicar)
+projetos/
+backups/
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+*.atenabak
+*.atenaseg
+*.xlsx
+transcricoes/
+entrevistas/
+audios/

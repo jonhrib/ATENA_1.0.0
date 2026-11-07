@@ -1,0 +1,28 @@
+{% extends "base.html" %}{% from "_macros.html" import icone, csrf_campo, data with context %}
+{% block titulo %}Backup e integridade{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><div class="titulo"><h1>Backup e integridade</h1>
+<p>Backups automáticos: {{ 'ativados a cada ' ~ c.backup_intervalo_horas ~ ' h (quando há alterações)' if c.backup_automatico else 'desativados' }} ·
+<a href="{{ url_for('configuracoes') }}#backup">alterar</a></p></div>
+<a class="btn sec" href="{{ url_for('integridade', uid=uid) }}">{{ icone('integridade') }}Verificar integridade</a></div>
+<div class="grade g-lado">
+<div class="cartao"><h2>Backups deste projeto</h2>
+<table class="tabela"><thead><tr><th>Data</th><th>Tipo</th><th>Tamanho</th><th>Observação</th><th></th></tr></thead><tbody>
+{% for b in lista %}<tr><td>{{ data(b.criado_em) }}</td><td>{{ b.tipo|replace('_',' ') }}</td><td class="num">{{ (b.tamanho/1024)|round(1) }} KB</td><td class="suave">{{ b.observacao }}</td>
+<td style="white-space:nowrap"><a class="btn sec pq" href="{{ url_for('backup_baixar', arquivo=b.arquivo) }}">{{ icone('baixar') }}Baixar</a>
+<details style="display:inline-block"><summary class="btn sec pq">Restaurar</summary>
+<form method="post" action="{{ url_for('backup_restaurar_local') }}" class="cartao compacto" style="position:absolute;z-index:5;width:360px;right:40px">{{ csrf_campo() }}
+<input type="hidden" name="arquivo" value="{{ b.arquivo }}">
+<label class="opcao"><input type="radio" name="modo" value="copia" checked> Como novo projeto (recomendado)</label>
+<label class="opcao"><input type="radio" name="modo" value="substituir"> Substituir este projeto pelo estado do backup</label>
+<label>Para substituir, digite SUBSTITUIR</label><input type="text" name="confirmacao">
+<label>Motivo</label><input type="text" name="justificativa" required>
+<div class="ajuda">O estado atual é guardado em “substituidos” e copiado num backup pré-restauração. A restauração é registrada no histórico.</div>
+<button class="btn" style="margin-top:8px">Restaurar</button></form></details></td></tr>
+{% else %}<tr><td colspan="5" class="suave">Nenhum backup ainda.</td></tr>{% endfor %}</tbody></table></div>
+<form method="post" class="cartao destaque">{{ csrf_campo() }}<h2>Fazer backup agora</h2>
+<p class="suave">Inclui o banco de trabalho, o cofre (cifrado) e os originais (cifrados). Arquivo <code>.atenabak</code>.</p>
+<label>Observação</label><input type="text" name="observacao" placeholder="Ex.: antes de revisar os temas"><button class="btn" style="margin-top:10px">{{ icone('backup') }}Criar backup</button>
+<p class="ajuda" style="margin-top:10px">Para restaurar um arquivo trazido de outro computador, use a tela inicial (Projetos › Restaurar um backup).</p></form>
+</div>
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends "base.html" %}{% from "_macros.html" import icone, situacao, chip_codigo with context %}
+{% block titulo %}Fragmentos a revisar{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><div class="titulo"><h1>Fragmentos a revisar</h1>
+<p>Fragmentos afetados por edições nas transcrições. Nada foi apagado: o texto original de cada fragmento está preservado. Decida se a associação continua válida.</p></div></div>
+{% for f in lista %}<div class="cartao compacto"><div class="linha"><b class="flex1">Fragmento nº {{ f.id }} · {{ f.documento_codigo }}</b>{{ situacao(f.situacao) }}</div>
+<div class="grade g2"><div><small class="suave">Texto original do fragmento</small><div class="citacao-bloco">{{ f.texto }}</div></div>
+<div><small class="suave">Texto atual nessa posição</small><div class="citacao-bloco">{{ f.atual }}</div></div></div>
+<div>{% for c in f.codigos %}{{ chip_codigo(c, uid) }}{% endfor %}</div>
+<div class="linha" style="margin-top:6px"><a class="btn pq" href="{{ url_for('editor', uid=uid, did=f.documento_id) }}#frag-{{ f.id }}">Revisar no editor</a></div></div>
+{% else %}<div class="cartao"><div class="vazio">Nenhum fragmento pendente de revisão.</div></div>{% endfor %}
+{% endblock %}

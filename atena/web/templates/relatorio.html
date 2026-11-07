@@ -1,0 +1,30 @@
+{% extends "base.html" %}{% from "_macros.html" import icone, situacao, csrf_campo, data, confirmar with context %}
+{% block titulo %}{{ r.titulo }}{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><div class="titulo"><div class="migalhas"><a href="{{ url_for('relatorios', uid=uid) }}">Relatórios</a> ›</div><h1>{{ r.titulo }}</h1>
+<p>{{ r.tipo_rotulo }} · {{ situacao(r.situacao) }} · versão nº {{ r.versao.numero }} ({{ data(r.versao.criado_em) }}, {{ r.versao.origem }}){% if r.versao.aprovado %} <span class="etiqueta ok">versão aprovada</span>{% endif %}</p></div>
+<form method="post" class="linha">{{ csrf_campo() }}<input type="hidden" name="acao" value="exportar"><select name="formato" style="width:auto"><option value="docx">Word (DOCX)</option><option value="pdf">PDF</option><option value="md">Markdown</option><option value="html">HTML</option></select><button class="btn sec">{{ icone('baixar') }}Exportar</button></form></div>
+{% for v in verificacao %}<div class="aviso {{ {'erro':'erro','aviso':'alerta'}.get(v.gravidade, 'info') }}" style="font-size:.9rem">{{ icone({'erro':'erro','aviso':'alerta'}.get(v.gravidade, 'info')) }}<div>{{ v.texto }}</div></div>{% endfor %}
+<div class="grade g2">
+<form method="post" class="cartao" id="form-rel">{{ csrf_campo() }}<input type="hidden" name="acao" value="salvar"><input type="hidden" name="versao_base" value="{{ r.versao.numero }}">
+<div class="linha" style="margin-bottom:6px"><h2 class="flex1" style="margin:0">Texto (Markdown)</h2><button type="button" class="btn sec pq" data-abrir="dlg-citar">Inserir citação vinculada</button><button type="button" class="btn sec pq" id="btn-previa">Atualizar prévia</button></div>
+<textarea name="conteudo" id="conteudo" rows="30" style="font-family:Consolas,monospace;font-size:.88rem">{{ r.versao.conteudo }}</textarea>
+<p class="ajuda"># título · ## seção · **negrito** · *itálico* · - lista · | tabela | · <code>[[frag:N]]</code> numa linha própria = citação longa vinculada ao fragmento N.</p>
+<div class="linha"><input type="text" name="observacao" class="flex1" placeholder="O que mudou nesta versão?"><button class="btn">Salvar nova versão</button></div></form>
+<div><div class="cartao"><h2>Prévia</h2><div class="previa-relatorio" id="previa">{{ previa|safe }}</div></div>
+<div class="cartao"><h3>Aprovação</h3><p class="suave">Aprovar registra que você revisou o texto. Textos com trechos preliminares de IA (“{{ marca_ia }}”) ou citações inválidas não podem ser aprovados.</p>
+<form method="post" class="linha">{{ csrf_campo() }}<input type="hidden" name="acao" value="aprovar"><input type="text" name="observacao" class="flex1" required placeholder="Observação da aprovação"><button class="btn">{{ icone('ok') }}Aprovar versão</button></form>
+{% if ia_ativa %}<form method="post" action="{{ url_for('ia_preparar', uid=uid) }}" style="margin-top:10px">{{ csrf_campo() }}<input type="hidden" name="operacao" value="revisar_texto"><input type="hidden" name="relatorio_id" value="{{ r.id }}">
+<button class="btn roxo pq">{{ icone('ia') }}Pedir revisão textual à IA (com prévia)</button></form>{% endif %}</div>
+<div class="cartao"><h3>Versões</h3><div class="rolagem" style="max-height:260px"><table class="tabela"><tbody>{% for v in r.versoes %}<tr><td><a href="{{ url_for('relatorio', uid=uid, rid=r.id, v=v.numero) }}">nº {{ v.numero }}</a>{% if v.aprovado %} <span class="etiqueta ok">aprovada</span>{% endif %}</td>
+<td class="suave">{{ data(v.criado_em) }} · {{ v.origem }}</td><td class="suave">{{ v.observacao }}</td>
+<td>{% if v.numero != r.versao.numero %}{{ confirmar(url_for('relatorio', uid=uid, rid=r.id), 'restaurar', 'Restaurar a versão nº ' ~ v.numero ~ ' como nova versão?', {'acao':'restaurar','numero':v.numero}, 'btn-link') }}{% endif %}</td></tr>{% endfor %}</tbody></table></div>
+{{ confirmar(url_for('relatorio', uid=uid, rid=r.id), 'Arquivar relatório', 'Arquivar este relatório? As versões continuam guardadas.', {'acao':'arquivar'}) }}</div></div></div>
+<dialog id="dlg-citar"><form method="dialog"><div class="cab"><h3>Inserir citação vinculada</h3></div><div class="corpo">
+<p class="suave">Escolha o fragmento. Será inserida a marcação <code>[[frag:N]]</code>, que o ATENA substitui pelo texto exato e pelo participante anônimo.</p>
+<input type="search" placeholder="Filtrar por texto, participante ou documento…" data-filtrar="#lista-citar">
+<div id="lista-citar" style="max-height:420px;overflow:auto;margin-top:6px">{% for f in frags %}<div class="fragmento" data-texto="{{ f.texto }} {{ f.participante }} {{ f.documento }}">
+<div class="meta">{{ f.participante or '—' }} · {{ f.documento }} · nº {{ f.id }} <button class="btn pq inserir-frag" type="button" data-id="{{ f.id }}">Inserir</button></div><div class="texto trecho-curto">{{ f.texto }}</div></div>{% endfor %}</div></div>
+<div class="pe"><button class="btn sec" value="cancelar">Fechar</button></div></form></dialog>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/relatorio.js') }}" id="js-rel" data-url-previa="{{ url_for('api_relatorio_previa', uid=uid) }}"></script>{% endblock %}

@@ -1,0 +1,45 @@
+{% extends "base.html" %}{% from "_macros.html" import icone, situacao, csrf_campo, confirmar with context %}
+{% block titulo %}Dados do projeto{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><div class="titulo"><h1>Dados do projeto</h1><p>Informações metodológicas, configurações de privacidade e campos de participante.</p></div></div>
+<div class="grade g-lado">
+<form method="post" class="cartao">{{ csrf_campo() }}<h2>Identificação e metodologia</h2>
+<label>Nome *</label><input type="text" name="nome" value="{{ proj.nome }}" required>
+<label>Descrição</label><textarea name="descricao" rows="2">{{ proj.descricao }}</textarea>
+<label>Objetivo</label><textarea name="objetivo" rows="2">{{ proj.objetivo }}</textarea>
+<label>Problema de pesquisa</label><textarea name="problema" rows="3">{{ proj.problema }}</textarea>
+<label>Pergunta de pesquisa</label><textarea name="pergunta" rows="2">{{ proj.pergunta }}</textarea>
+<label>Metodologia</label><input type="text" name="metodologia" value="{{ proj.metodologia }}">
+<label>Referências metodológicas</label><textarea name="referencias" rows="3">{{ proj.referencias }}</textarea>
+<label>Responsável</label><input type="text" name="responsavel" value="{{ proj.responsavel }}">
+<label>Motivo da alteração (opcional)</label><input type="text" name="justificativa">
+<div class="linha" style="margin-top:12px"><button class="btn">Salvar</button>
+<span class="suave">Criado em {{ proj.criado_em[:10] }} · situação {{ situacao(proj.situacao) }}</span></div></form>
+<div>
+<div class="cartao" id="privacidade"><h2>{{ icone('anonimizacao') }} Privacidade</h2>
+<h3>Termos protegidos ({{ protegidos|length }})</h3>
+<p class="suave">Nunca são substituídos, mesmo que pareçam nomes (ex.: Empresas Juniores e IES).</p>
+<div class="rolagem" style="max-height:200px;padding:6px">{% for t in protegidos %}
+<span class="chip">{{ t.termo }} <form class="inline form-confirmar" method="post" action="{{ url_for('projeto_termo_remover', uid=uid, tid=t.id) }}" data-confirmar="Retirar “{{ t.termo }}” da lista de protegidos?" data-justificativa="1">{{ csrf_campo() }}<input type="hidden" name="justificativa"><button title="Remover">×</button></form></span>
+{% else %}<span class="suave">Nenhum termo protegido.</span>{% endfor %}</div>
+<form method="post" action="{{ url_for('projeto_termos', uid=uid) }}">{{ csrf_campo() }}<input type="hidden" name="tipo" value="protegido">
+<label>Adicionar (um por linha)</label><textarea name="termos" rows="3"></textarea>
+<label>ou incluir lista pronta</label><select name="lista"><option value="">—</option>{% for n, it in listas.items() %}<option value="{{ n }}">{{ n|replace('_',' ') }} ({{ it|length }})</option>{% endfor %}</select>
+<button class="btn sec pq" style="margin-top:8px">Adicionar termos protegidos</button></form>
+<hr><h3>Exceções ({{ excecoes|length }})</h3>
+<p class="suave">Palavras que a detecção heurística não deve marcar como nome (ex.: “Clara” como adjetivo é tratado caso a caso; aqui entram falsos positivos frequentes).</p>
+<div class="rolagem" style="max-height:160px;padding:6px">{% for t in excecoes %}
+<span class="chip">{{ t.termo }} <form class="inline form-confirmar" method="post" action="{{ url_for('projeto_termo_remover', uid=uid, tid=t.id) }}" data-confirmar="Remover a exceção “{{ t.termo }}”?" data-justificativa="1">{{ csrf_campo() }}<input type="hidden" name="justificativa"><button>×</button></form></span>
+{% else %}<span class="suave">Nenhuma exceção.</span>{% endfor %}</div>
+<form method="post" action="{{ url_for('projeto_termos', uid=uid) }}">{{ csrf_campo() }}<input type="hidden" name="tipo" value="excecao">
+<label>Adicionar exceções (uma por linha)</label><textarea name="termos" rows="2"></textarea><button class="btn sec pq" style="margin-top:8px">Adicionar exceções</button></form>
+</div>
+<form method="post" action="{{ url_for('projeto_campos', uid=uid) }}" class="cartao" id="campos">{{ csrf_campo() }}<h2>Campos de participante</h2>
+<p class="suave">Metadados <b>não identificáveis</b> sugeridos no cadastro (um por linha). Não colete dados pessoais desnecessários.</p>
+<textarea name="campos" rows="5">{{ campos|join('\n') }}</textarea><button class="btn sec pq" style="margin-top:8px">Salvar campos</button></form>
+<div class="cartao"><h2>Situação</h2>
+{% if proj.situacao == 'ativo' %}{{ confirmar(url_for('projeto_situacao', uid=uid), 'Arquivar projeto', 'Arquivar o projeto? Ele continuará disponível e poderá ser reativado.', {'situacao':'arquivado'}, 'btn sec') }}
+{% else %}{{ confirmar(url_for('projeto_situacao', uid=uid), 'Reativar projeto', 'Reativar o projeto?', {'situacao':'ativo'}, 'btn') }}{% endif %}
+<a class="btn sec" href="{{ url_for('backup_projeto', uid=uid) }}">Exportar/backup do projeto</a></div>
+</div></div>
+{% endblock %}

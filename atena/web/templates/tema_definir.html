@@ -1,0 +1,25 @@
+{% extends "base.html" %}{% from "_macros.html" import icone, situacao, csrf_campo, chip_codigo, data with context %}
+{% block titulo %}Definir · {{ t.nome }}{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><div class="titulo"><div class="migalhas"><a href="{{ url_for('definicao', uid=uid) }}">Definição</a> › <a href="{{ url_for('tema', uid=uid, tid=t.id) }}">{{ t.nome }}</a></div>
+<h1>Definição do tema</h1><p>{{ situacao(t.situacao, t.situacao_rotulo) }}{% if t.definicao_confirmada_em %} · confirmada em {{ data(t.definicao_confirmada_em) }}{% endif %}
+{% if t.definicao_desatualizada %} <span class="etiqueta alerta">houve alterações depois da confirmação — reconfirme</span>{% endif %}</p></div></div>
+<div class="grade g-lado">
+<form method="post" class="cartao">{{ csrf_campo() }}
+<label>Nome do tema</label><input type="text" name="nome" value="{{ t.nome }}" required>
+<label>Conceito central *</label><textarea name="conceito_central" rows="3" placeholder="Qual é a essência do tema? Que história ele conta?">{{ t.conceito_central }}</textarea>
+<label>Descrição *</label><textarea name="descricao" rows="4">{{ t.descricao }}</textarea>
+<div class="grade g2"><div><label>Escopo (o que o tema abrange)</label><textarea name="escopo" rows="3">{{ t.escopo }}</textarea></div>
+<div><label>Limites (o que o tema não abrange)</label><textarea name="limites" rows="3">{{ t.limites }}</textarea></div></div>
+<label>Relação com a pergunta de pesquisa</label><div class="ajuda">Pergunta: {{ pergunta or '(não informada nos dados do projeto)' }}</div><textarea name="relacao_pergunta" rows="3">{{ t.relacao_pergunta }}</textarea>
+<label>Justificativa da definição</label><textarea name="justificativa" rows="3">{{ t.justificativa }}</textarea>
+<div class="linha" style="margin-top:10px"><button class="btn sec" name="confirmar" value="0">Salvar rascunho</button>
+<button class="btn" name="confirmar" value="1">{{ icone('ok') }}Confirmar definição</button></div>
+<p class="ajuda">Para confirmar: conceito central, descrição, ao menos um código (ou subtema) e ao menos uma evidência representativa.</p></form>
+<div class="painel-lateral">
+<div class="cartao"><h3>Códigos e subtemas</h3>{% for c in t.codigos %}{{ chip_codigo(c, uid) }}{% endfor %}
+{% for s in t.subtemas %}<div>↳ <a href="{{ url_for('tema_definir', uid=uid, tid=s.id) }}">{{ s.nome }}</a></div>{% endfor %}</div>
+<div class="cartao"><h3>Evidências representativas ({{ t.evidencias_representativas|length }})</h3>
+{% for e in t.evidencias_representativas %}<div class="citacao-bloco">{{ e.texto }}<footer>{{ e.participante_codigo or '—' }} · {{ e.documento_codigo }} · nº {{ e.id }}</footer></div>{% else %}<p class="suave">Nenhuma. Marque evidências na <a href="{{ url_for('tema', uid=uid, tid=t.id) }}#evidencias">página do tema</a>.</p>{% endfor %}
+<p class="ajuda">{{ ev|length }} fragmentos no tema.</p></div></div></div>
+{% endblock %}

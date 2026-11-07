@@ -1,0 +1,31 @@
+{% extends "base.html" %}{% from "_macros.html" import icone, situacao, csrf_campo, data, confirmar with context %}
+{% block titulo %}{{ pa.codigo }}{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><div class="titulo"><div class="migalhas"><a href="{{ url_for('participantes', uid=uid) }}">Participantes</a> ›</div>
+<h1 class="mono">{{ pa.codigo }}</h1><p>{{ situacao(pa.situacao, pa.situacao_rotulo) }} {% if not pa.ativo %}<span class="etiqueta">inativo</span>{% endif %}</p></div>
+<a class="btn sec" href="{{ url_for('consulta_fragmentos', uid=uid, participante=pa.id) }}">Ver fragmentos deste participante</a></div>
+<div class="grade g-lado">
+<div>
+<form method="post" class="cartao">{{ csrf_campo() }}<h2>Metadados (não identificáveis)</h2>
+<div id="metas">{% for k, v in pa.metadados_obj.items() %}<div class="linha"><input type="text" name="meta_chave" value="{{ k }}" style="max-width:220px"><input type="text" name="meta_valor" value="{{ v }}" class="flex1"></div>{% endfor %}
+{% for c in campos if c not in pa.metadados_obj %}<div class="linha"><input type="text" name="meta_chave" value="{{ c }}" style="max-width:220px"><input type="text" name="meta_valor" class="flex1"></div>{% endfor %}</div>
+<button type="button" class="btn-link" data-add-meta="metas">+ outro campo</button>
+<label>Situação</label><select name="situacao">{% for k, v in situacoes.items() %}<option value="{{ k }}" {{ 'selected' if k == pa.situacao }}>{{ v }}</option>{% endfor %}</select>
+<label>Observações</label><textarea name="observacoes" rows="2">{{ pa.observacoes }}</textarea>
+<label>Motivo da alteração</label><input type="text" name="justificativa"><button class="btn" style="margin-top:10px">Salvar</button></form>
+<div class="cartao"><h2>Documentos</h2>{% for d in documentos %}<div><a href="{{ url_for('documento', uid=uid, did=d.id) }}">{{ d.codigo }} — {{ d.titulo }}</a> {{ situacao(d.situacao, d.situacao_rotulo) }}</div>
+{% else %}<p class="suave">Nenhum documento associado.</p>{% endfor %}</div>
+<div class="cartao"><h2>Histórico</h2><table class="tabela"><tbody>{% for h in hist %}<tr><td class="suave">{{ data(h.momento) }}</td><td>{{ h.operacao }}</td><td class="suave">{{ h.justificativa }}</td></tr>{% endfor %}</tbody></table></div>
+</div>
+<div>
+<form method="post" action="{{ url_for('participante_identidade', uid=uid, pid=pa.id) }}" class="cartao">{{ csrf_campo() }}
+<h2>{{ icone('cofre') }} Identidade no cofre</h2>
+{% if cofre_aberto %}<p class="suave">Registre ou atualize o nome real e suas variantes (cifrados). Eles nunca aparecem fora do cofre.</p>
+<label>Nome real</label><input type="text" name="nome_real" autocomplete="off" required><label>Variantes (;)</label><input type="text" name="variantes" autocomplete="off">
+<button class="btn sec" style="margin-top:8px">Guardar no cofre</button>
+{% else %}<p class="suave">Desbloqueie o cofre para registrar a identidade.</p><a class="btn sec" href="{{ url_for('cofre', uid=uid, proximo=request.path) }}">Desbloquear</a>{% endif %}</form>
+<div class="cartao"><h2>Situação no projeto</h2>
+{% if pa.ativo %}{{ confirmar(url_for('participante_ativo', uid=uid, pid=pa.id), 'Desativar participante', 'Desativar o participante? Os dados continuam guardados (ex.: retirada de consentimento).', {'acao':'desativar'}) }}
+{% else %}<form method="post" action="{{ url_for('participante_ativo', uid=uid, pid=pa.id) }}">{{ csrf_campo() }}<input type="hidden" name="acao" value="reativar"><button class="btn sec">Reativar</button></form>{% endif %}</div>
+</div></div>
+{% endblock %}

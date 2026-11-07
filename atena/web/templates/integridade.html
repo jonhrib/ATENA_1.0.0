@@ -1,0 +1,14 @@
+{% extends "base.html" %}{% from "_macros.html" import icone with context %}
+{% block titulo %}Integridade{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><div class="titulo"><h1>Verificação de integridade</h1><p>Verificado em {{ r.verificado_em|replace('T',' ') }}.</p></div></div>
+<div class="cartao">
+{% if r.ok %}<div class="aviso ok">{{ icone('ok') }}<div>Nenhum problema encontrado. Bancos íntegros, chaves estrangeiras válidas, cadeia de hashes do histórico íntegra
+({{ r.cadeia.registros }} registros), versões e originais conferem com os hashes, fragmentos consistentes.</div></div>
+{% else %}{% for x in r.problemas %}<div class="aviso erro">{{ icone('erro') }}<div>{{ x }}</div></div>{% endfor %}
+<p>Recomendação: faça um backup do estado atual e, se necessário, restaure o último backup íntegro.</p>{% endif %}
+<ul class="suave"><li><code>PRAGMA integrity_check</code> e <code>foreign_key_check</code> nos dois bancos;</li>
+<li>cadeia de hashes SHA-256 do histórico (detecta alterações feitas fora do ATENA);</li>
+<li>hash de cada versão de transcrição e existência de cada original cifrado;</li>
+<li>correspondência entre fragmentos marcados como “ok” e o texto atual.</li></ul></div>
+{% endblock %}
