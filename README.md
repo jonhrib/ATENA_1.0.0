@@ -43,7 +43,6 @@ na tela inicial (senha do cofre da demonstração: `demonstracao-atena`).
 - [Backup e restauração](docs/BACKUP_E_RESTAURACAO.md)
 - [Arquitetura e decisões técnicas](docs/ARQUITETURA.md)
 - [Segurança, privacidade e limitações](docs/SEGURANCA_PRIVACIDADE_E_LIMITACOES.md)
-- [Relatório de entrega: funcionalidades e testes executados](docs/RELATORIO_DE_ENTREGA.md)
 - [Licenças de terceiros](docs/LICENCAS_DE_TERCEIROS.md)
 
 ## Testes
