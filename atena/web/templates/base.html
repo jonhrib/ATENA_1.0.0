@@ -5,7 +5,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{% block titulo %}{{ NOME }}{% endblock %} · {{ NOME }}</title>
-<link rel="icon" href="{{ url_for('static', filename='logo.svg') }}">
+<link rel="icon" href="{{ url_for('static', filename='logo.png') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/atena.css') }}">
 <meta name="csrf" content="{{ csrf }}">
 {% block cabeca %}{% endblock %}
@@ -13,7 +13,7 @@
 <body>
 <div class="app">
   <aside class="lateral">
-    <a class="marca" href="{{ url_for('inicio') }}"><img src="{{ url_for('static', filename='logo.svg') }}" alt="" style="width:34px;height:34px;flex:none">
+    <a class="marca" href="{{ url_for('inicio') }}"><img src="{{ url_for('static', filename='logo.png') }}" alt="" style="width:34px;height:34px;flex:none">
       <div><strong>{{ NOME }}</strong><span>{{ NOME_COMPLETO }}</span></div></a>
     {% set ep = request.endpoint %}
     <nav class="nav">
